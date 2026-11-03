@@ -162,7 +162,13 @@ public static class Forja3DPreparar
         anim.runtimeAnimatorController = ctrl;
         anim.applyRootMotion = false;
         anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-        if (man.cuerpo == "ave" && !inst.GetComponent<AveProcedural>()) inst.AddComponent<AveProcedural>();
+        if (man.cuerpo == "ave")
+        {
+            var ave = inst.GetComponent<AveProcedural>();
+            if (!ave) ave = inst.AddComponent<AveProcedural>();
+            ave.picoLocal = DireccionPico(inst);
+            Debug.Log($"[Forja3D] {n}: dirección del pico (local a la cabeza) {ave.picoLocal}");
+        }
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(inst, $"{carpeta}/{n}.prefab");
         UnityEngine.Object.DestroyImmediate(inst);
@@ -180,6 +186,32 @@ public static class Forja3DPreparar
             prefab = prefab,
             clips = clips.Select(c => Corto(c.name)).ToArray(),
         };
+    }
+
+    // Punta del pico: el vértice de la cabeza más lejano a su articulación, en el espacio local del hueso cabeza.
+    static Vector3 DireccionPico(GameObject inst)
+    {
+        try
+        {
+            var smr = inst.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            if (!smr || !smr.sharedMesh) return Vector3.zero;
+            var huesos = smr.bones; var mesh = smr.sharedMesh;
+            int ic = Array.FindIndex(huesos, h => h && (h.name == "cabeza" || h.name.EndsWith(":cabeza")));
+            if (ic < 0) return Vector3.zero;
+            var bp = mesh.bindposes[ic];
+            var verts = mesh.vertices; var pesos = mesh.boneWeights;
+            if (verts.Length != pesos.Length) return Vector3.zero;
+            Vector3 mejor = Vector3.zero; float dmax = 0f;
+            for (int i = 0; i < verts.Length; i++)
+            {
+                var w = pesos[i];
+                if (w.boneIndex0 != ic || w.weight0 < 0.5f) continue;
+                var local = bp.MultiplyPoint3x4(verts[i]); // ya relativo a la articulación de la cabeza
+                if (local.sqrMagnitude > dmax) { dmax = local.sqrMagnitude; mejor = local; }
+            }
+            return dmax > 0f ? mejor.normalized : Vector3.zero;
+        }
+        catch (Exception e) { Debug.LogWarning("[Forja3D] No pude medir el pico: " + e.Message); return Vector3.zero; }
     }
 
     static void CrearEscena(EntradaModelo[] entradas)
