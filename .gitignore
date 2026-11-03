@@ -1,0 +1,13 @@
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/Assets/Forja3D/Generado/
+/Assets/Forja3D/Generado.meta
+*.csproj
+*.sln
+.vs/
+.idea/
