@@ -4,12 +4,12 @@
   "esqueleto": "forja",
   "cuerpo": "ave",
   "especie": "pájaro",
-  "nombre": "martin-pescador-2",
-  "descripcion": "un martín pescador volando y planeando (rehacer el esqueleto con la misma malla)",
+  "nombre": "martin-pescador-3",
+  "descripcion": "un martín pescador volando y planeando (rehacer el esqueleto con la misma malla, v3)",
   "medida_m": 0.4,
   "archivos": [
     {
-      "nombre": "martin-pescador-2",
+      "nombre": "martin-pescador-3",
       "tipo": "modelo",
       "ext": "fbx",
       "clips": [
@@ -36,5 +36,5 @@
   ],
   "fps": 30,
   "biblioteca": false,
-  "origen": "FREED000ME/forja3d-animacion/biblioteca/martin-pescador-2"
+  "origen": "FREED000ME/forja3d-animacion/biblioteca/martin-pescador-3"
 }
