@@ -1,0 +1,40 @@
+{
+  "forja3d": 1,
+  "personaje": true,
+  "esqueleto": "forja",
+  "cuerpo": "ave",
+  "especie": "pájaro",
+  "nombre": "martin-pescador",
+  "descripcion": "un martín pescador con animaciones de reposo (idle), aleteo en vuelo, planeo, picoteo y salto",
+  "medida_m": 0.4,
+  "archivos": [
+    {
+      "nombre": "martin-pescador",
+      "tipo": "modelo",
+      "ext": "fbx",
+      "clips": [
+        "volar",
+        "planear"
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "nombre": "volar",
+      "modo": "volar",
+      "segundos": 2.046,
+      "fotogramas": 62,
+      "bucle": true
+    },
+    {
+      "nombre": "planear",
+      "modo": "planear",
+      "segundos": 4,
+      "fotogramas": 121,
+      "bucle": true
+    }
+  ],
+  "fps": 30,
+  "biblioteca": false,
+  "origen": "FREED000ME/forja3d-animacion/biblioteca/martin-pescador"
+}
