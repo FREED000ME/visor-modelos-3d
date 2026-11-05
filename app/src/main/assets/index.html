@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Armado Paso a Paso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one-screen app. Header + tabs on top, one panel at a time; the 3D viewer fills the screen like a manual page. */
+:root{
+  --paper:#F4F5F2;      /* page background, cool paper */
+  --sheet:#FFFFFF;      /* cards */
+  --ink:#16181D;        /* text and drawing lines */
+  --muted:#5D6470;      /* secondary text */
+  --rule:#D9DCD6;       /* borders */
+  --accent:#2350D8;     /* cobalt: actions, active step */
+  --accent-ink:#FFFFFF;
+  --mark:#F2C230;       /* highlighter yellow: the piece moving now */
+  --warn:#B5541B;
+  --ok:#2E7D4F;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121417; --sheet:#1B1E23; --ink:#E9EBEE; --muted:#A3AAB5; --rule:#2E333B;
+    --accent:#7C9BFF; --accent-ink:#0D1020; --mark:#F2C230; --warn:#F0955A; --ok:#6FCB94;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121417; --sheet:#1B1E23; --ink:#E9EBEE; --muted:#A3AAB5; --rule:#2E333B;
+  --accent:#7C9BFF; --accent-ink:#0D1020; --mark:#F2C230; --warn:#F0955A; --ok:#6FCB94;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.45 var(--f-body);display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+header.top{display:flex;align-items:center;gap:12px;padding:10px 16px 0}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{flex:none}
+.brand h1{font-size:18px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.brand small{display:block;font:500 11px/1 var(--f-mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+nav.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 16px;border-bottom:1px solid var(--rule)}
+nav.tabs button{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--rule);background:var(--sheet);border-radius:10px;padding:8px 6px;font-weight:600;font-size:14px}
+nav.tabs button .n{font:600 12px/1 var(--f-mono);width:20px;height:20px;border-radius:50%;display:grid;place-items:center;border:1.5px solid currentColor}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+nav.tabs button:disabled{opacity:.45;cursor:not-allowed}
+main{flex:1;min-height:0;position:relative}
+.panel{position:absolute;inset:0;overflow:auto;padding:16px;display:none}
+.panel.on{display:block}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h2{font-size:17px;font-weight:700}
+.lead{color:var(--muted);margin:0;max-width:62ch}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);padding:10px 14px;font-weight:600;min-height:44px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ink{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:34px;padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.grow{flex:1 1 160px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.pg{position:relative;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--paper);aspect-ratio:3/4;display:flex;align-items:center;justify-content:center}
+.pg img{max-width:100%;max-height:100%;display:block}
+.pg .num{position:absolute;left:6px;top:6px;font:600 12px/1 var(--f-mono);background:var(--ink);color:var(--paper);border-radius:6px;padding:4px 6px}
+.pg .acts{position:absolute;right:4px;bottom:4px;display:flex;gap:4px}
+.pg .acts button{width:30px;height:30px;border-radius:8px;border:1px solid var(--rule);background:var(--sheet);display:grid;place-items:center;font-size:14px}
+.empty{border:1.5px dashed var(--rule);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.pick{position:relative;display:flex;flex:1 1 160px}
+.pick .btn{width:100%;pointer-events:none}
+.pick input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:200px;z-index:2}
+.pick:focus-within .btn{outline:3px solid var(--accent);outline-offset:2px}
+textarea{width:100%;min-height:90px;border:1px solid var(--rule);background:var(--paper);border-radius:9px;padding:8px;font:13px/1.4 var(--f-mono)}
+.plist{display:flex;flex-direction:column;gap:8px}
+.plist .it{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--rule);border-radius:10px;padding:10px 12px;background:var(--paper)}
+.plist .it b{display:block}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.progress{font:500 13px/1.4 var(--f-mono);color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--rule);overflow:hidden}
+.bar i{display:block;height:100%;width:30%;background:var(--accent);animation:slide 1.4s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+@media (prefers-reduced-motion: reduce){.bar i{animation:none;width:100%;opacity:.5}}
+.warns{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.warns li{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn) 10%,transparent);border-left:3px solid var(--warn)}
+.warns li.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);border-left-color:var(--ok)}
+.warns b{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font:600 11px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:4px 4px;border-bottom:1px solid var(--rule);vertical-align:middle}
+td input,td select,.f input,.f select,.f textarea{width:100%;min-width:52px;border:1px solid var(--rule);background:var(--paper);border-radius:7px;padding:6px 7px;font-size:14px}
+td input[type=number],.f input[type=number]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.id{font:600 14px var(--f-mono)}
+td input{min-width:120px} td input[type=number]{min-width:76px} td select{min-width:118px}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{border:1px solid var(--rule);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+.step header{display:flex;gap:10px;align-items:center}
+.step .sn{font:700 22px/1 var(--f-display);min-width:34px;height:34px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:8px}
+.step header input{flex:1;font-weight:600}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.f span{font:600 11px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.04em}
+.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
+.act{border:1px solid var(--rule);border-radius:10px;padding:10px;background:var(--sheet);display:flex;flex-direction:column;gap:8px}
+.act .ttl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.conf{font:600 11px var(--f-mono);padding:3px 7px;border-radius:20px;border:1px solid currentColor}
+.conf.lo{color:var(--warn)} .conf.hi{color:var(--ok)}
+.srcthumb{max-width:140px;border:1px solid var(--rule);border-radius:8px;display:block}
+/* Viewer */
+#p-ver{padding:0}
+.viewer{position:absolute;inset:0;display:flex;flex-direction:column}
+.stage{position:relative;flex:1;min-height:0;touch-action:none}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ov{position:absolute;left:12px;right:12px;top:12px;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+.stepbadge{font:800 40px/1 var(--f-display);color:var(--ink);background:var(--sheet);border:2.5px solid var(--ink);border-radius:12px;min-width:58px;height:58px;display:grid;place-items:center;flex:none}
+.stepinfo{background:color-mix(in srgb,var(--sheet) 90%,transparent);border:1px solid var(--rule);border-radius:12px;padding:8px 12px;max-width:min(520px,100%);display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(6px)}
+.stepinfo h3{font-size:16px;font-weight:700}
+.stepinfo p{margin:0;font-size:14px;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:600 12px/1 var(--f-mono);border:1.5px solid var(--ink);border-radius:20px;padding:5px 9px;background:var(--sheet)}
+.chip.hw{background:var(--mark);color:#16181D;border-color:#16181D}
+.src{position:absolute;right:12px;bottom:12px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:4px;pointer-events:auto;max-width:34%}
+.src img{display:block;max-width:100%;max-height:30vh;border-radius:6px}
+.src span{display:block;font:600 10px/1.2 var(--f-mono);color:var(--muted);padding:4px 2px 2px;text-transform:uppercase}
+.controls{border-top:1px solid var(--rule);background:var(--sheet);padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.transport{display:flex;align-items:center;gap:8px}
+.transport .btn{min-width:48px;padding:8px}
+#scrub{flex:1;accent-color:var(--accent);height:28px}
+.stepcount{font:600 13px var(--f-mono);min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+.opts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 10px;font-size:13px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--muted)}
+dialog{border:1px solid var(--rule);border-radius:16px;background:var(--sheet);color:var(--ink);padding:18px;max-width:min(520px,92vw);width:100%}
+dialog::backdrop{background:rgb(0 0 0 / .45)}
+dialog video{width:100%;border-radius:10px;background:#000;max-height:60vh}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:10px;font-size:14px;z-index:9;max-width:90vw;display:none}
+.recdot{width:10px;height:10px;border-radius:50%;background:#E03A3A;display:inline-block}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+details summary{cursor:pointer;font-weight:600}
+code{font-family:var(--f-mono);font-size:13px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 12l12-6 12 6-12 6z"/><path d="M5 12v10l12 6V18"/><path d="M29 12v10l-12 6"/></g><path d="M17 1v4" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/><path d="M14 3.5l3 3 3-3" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><h1>Armado Paso a Paso</h1><small>del diagrama al 3D</small></div>
+  </div>
+</header>
+<nav class="tabs" role="tablist" aria-label="Etapas">
+  <button role="tab" id="t-fotos" aria-selected="true" data-tab="fotos"><span class="n">1</span>Fotos</button>
+  <button role="tab" id="t-revisar" aria-selected="false" data-tab="revisar" disabled><span class="n">2</span>Revisar</button>
+  <button role="tab" id="t-ver" aria-selected="false" data-tab="ver" disabled><span class="n">3</span>Ver armado</button>
+</nav>
+<main>
+  <!-- 1. FOTOS -->
+  <section class="panel on" id="p-fotos" role="tabpanel" aria-labelledby="t-fotos">
+    <div class="wrap">
+      <div class="card">
+        <h2>Fotografía el manual</h2>
+        <p class="lead">Una foto por página, en orden. Empieza por la página con la lista de piezas y herrajes: es la que más ayuda a interpretar el resto.</p>
+        <div class="row">
+          <div class="pick"><span class="btn primary">Tomar foto</span><input id="in-cam" type="file" accept="image/*" capture="environment" aria-label="Tomar foto"></div>
+          <div class="pick"><span class="btn">Subir imágenes</span><input id="in-gal" type="file" accept="image/*" multiple aria-label="Subir imágenes"></div>
+        </div>
+        <div id="pages"></div>
+        <label class="toggle"><input type="checkbox" id="opt-contrast" checked>Mejorar contraste de las líneas</label>
+        <p class="hint" id="chat-hint">¿No se abre la cámara o la galería? Envía las fotos del manual en el chat de Claude y pídele que te deje el plan en esta app: aparecerá abajo, en «Planes desde el chat».</p>
+      </div>
+      <div class="card" id="chat-card" hidden>
+        <h2>Planes desde el chat</h2>
+        <p class="lead" id="chat-lead">Los planes que Claude interpreta en el chat aparecen aquí.</p>
+        <div class="plist" id="chat-plans"></div>
+      </div>
+      <div class="card" id="ai-card">
+        <h2>Interpretar con Claude</h2>
+        <p class="lead" id="ai-lead">Claude lee las páginas, identifica piezas, herrajes y pasos, y arma un plan 3D que luego puedes revisar.</p>
+        <div id="key-box" hidden style="display:flex;flex-direction:column;gap:6px">
+          <label class="f"><span>Tu clave de API de Claude</span><input id="api-key" type="password" autocomplete="off" placeholder="sk-ant-…" style="font-family:var(--f-mono)"></label>
+          <p class="hint">Se crea en console.anthropic.com → API Keys. Se guarda solo en este teléfono. Cada manual cuesta unos centavos de dólar de tu saldo de API.</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-max">Máxima precisión (tarda más)</label>
+        <div class="row">
+          <button class="btn ink grow" id="b-interpret" disabled>Interpretar páginas</button>
+          <button class="btn ghost" id="b-stop" hidden>Detener</button>
+        </div>
+        <div id="ai-status" hidden>
+          <div class="bar"><i></i></div>
+          <p class="progress" id="ai-progress">Pensando…</p>
+        </div>
+        <p class="hint">Las fotos solo se envían a Claude con tu cuenta y no se guardan en esta página. Usa el manual de un mueble tuyo, para uso personal.</p>
+      </div>
+      <div class="card">
+        <h2>¿Sin manual a mano?</h2>
+        <div class="row">
+          <button class="btn grow" id="b-demo">Probar con una estantería de ejemplo</button>
+          <div class="pick"><span class="btn">Abrir un plan guardado (.json)</span><input id="in-plan" type="file" accept="application/json,.json" aria-label="Abrir un plan guardado"></div>
+        </div>
+        <details>
+          <summary>Pegar un plan como texto</summary>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <textarea id="paste-plan" aria-label="Plan en formato JSON" placeholder='{"title": "...", "parts": [...], "steps": [...]}'></textarea>
+            <button class="btn" id="b-pasteplan">Abrir plan pegado</button>
+          </div>
+        </details>
+        <button class="btn ghost small" id="b-resume" hidden>Seguir con el último plan</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. REVISAR -->
+  <section class="panel" id="p-revisar" role="tabpanel" aria-labelledby="t-revisar">
+    <div class="wrap" id="review"></div>
+  </section>
+
+  <!-- 3. VER -->
+  <section class="panel" id="p-ver" role="tabpanel" aria-labelledby="t-ver">
+    <div class="viewer">
+      <div class="stage" id="stage">
+        <canvas id="gl" aria-label="Vista 3D del armado"></canvas>
+        <div class="nogl" id="nogl">Tu navegador no puede mostrar 3D (WebGL desactivado). Prueba con Chrome o Safari actualizados.</div>
+        <div class="ov">
+          <div class="stepbadge" id="ov-n">1</div>
+          <div class="stepinfo">
+            <h3 id="ov-title"></h3>
+            <p id="ov-tip"></p>
+            <div class="chips" id="ov-chips"></div>
+          </div>
+        </div>
+        <div class="src" id="ov-src" hidden><img id="ov-src-img" alt="Paso original del manual"><span>Manual</span></div>
+      </div>
+      <div class="controls">
+        <div class="transport">
+          <button class="btn" id="b-prev" aria-label="Paso anterior">◀︎</button>
+          <button class="btn ink" id="b-play" aria-label="Reproducir">▶︎</button>
+          <button class="btn" id="b-next" aria-label="Paso siguiente">▶︎▶︎</button>
+          <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Elegir paso">
+          <span class="stepcount" id="stepcount">1/1</span>
+        </div>
+        <div class="opts">
+          <div class="seg" role="group" aria-label="Velocidad">
+            <button data-speed="0.5" aria-pressed="false">0,5×</button>
+            <button data-speed="1" aria-pressed="true">1×</button>
+            <button data-speed="2" aria-pressed="false">2×</button>
+          </div>
+          <div class="seg" role="group" aria-label="Estilo">
+            <button data-style="manual" aria-pressed="true">Manual</button>
+            <button data-style="madera" aria-pressed="false">Madera</button>
+          </div>
+          <button class="btn small" id="b-voice" aria-pressed="false">Voz: no</button>
+          <button class="btn small" id="b-center">Recentrar</button>
+          <button class="btn small primary" id="b-rec"><span class="recdot"></span>Grabar video</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg-video">
+  <h2 style="font-size:17px;margin-bottom:10px">Tu video de armado</h2>
+  <video id="vid" controls playsinline></video>
+  <p class="hint" id="vid-info" style="margin:8px 0"></p>
+  <div class="row" style="margin-top:8px">
+    <button class="btn primary grow" id="b-savevid">Guardar video</button>
+    <button class="btn grow" id="b-closevid">Cerrar</button>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* =========================================================
+   Armado Paso a Paso — single-file app
+   Plan JSON → layout (boxes + hardware) → WebGL player
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const num = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+function toast(msg, ms = 3200){ const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = "none", ms); }
+const store = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+const S = {
+  pages: [],          // {id, blob, url, rot}
+  plan: null,
+  layout: null,
+  tab: "fotos",
+  sample: null, downloads: null,
+  ctl: null
+};
+
+/* ---------------- Vocabulary ---------------- */
+const AX = ["x","y","z"];
+const DIRS = ["+x","-x","+y","-y","+z","-z"];
+const DIR_LABEL = {"+x":"derecha","-x":"izquierda","+y":"arriba","-y":"abajo","+z":"frente","-z":"atrás"};
+const PART_KINDS = {board:"Tablero", panel:"Panel fino", cylinder:"Cilindro / pata"};
+const HW = {
+  screw:  {label:"Tornillo",        d:4,  L:40, color:[.62,.64,.68], phase:"post", through:true},
+  camBolt:{label:"Perno excéntrica",d:6,  L:34, color:[.62,.64,.68], phase:"pre",  through:false},
+  cam:    {label:"Excéntrica",      d:15, L:12, color:[.70,.72,.76], phase:"post", through:true},
+  dowel:  {label:"Tarugo",          d:8,  L:30, color:[.80,.63,.40], phase:"pre",  through:false},
+  nail:   {label:"Clavo",           d:2,  L:25, color:[.55,.57,.60], phase:"post", through:true},
+  hinge:  {label:"Bisagra",         d:35, L:12, color:[.70,.72,.76], phase:"post", box:true},
+  bracket:{label:"Escuadra",        d:30, L:4,  color:[.62,.64,.68], phase:"post", box:true},
+  other:  {label:"Otro herraje",    d:12, L:12, color:[.62,.64,.68], phase:"post", box:true}
+};
+const HW_ALIASES = {tornillo:"screw", screw:"screw", bolt:"camBolt", cambolt:"camBolt", perno:"camBolt", cam:"cam", excentrica:"cam", dowel:"dowel", tarugo:"dowel", espiga:"dowel", nail:"nail", clavo:"nail", hinge:"hinge", bisagra:"hinge", bracket:"bracket", escuadra:"bracket"};
+
+/* ---------------- Demo plan: 3-shelf bookcase ---------------- */
+const DEMO = {
+  title: "Estantería de 3 baldas (ejemplo)",
+  notes: "Plan de ejemplo: 80 × 100 × 30 cm, tablero de 18 mm.",
+  parts: [
+    {id:"A", name:"Lateral", kind:"board", l:1000, w:300, t:18, qty:2},
+    {id:"B", name:"Balda", kind:"board", l:764, w:300, t:18, qty:3},
+    {id:"C", name:"Fondo", kind:"panel", l:1000, w:800, t:3, qty:1}
+  ],
+  hardware: [
+    {id:"101", name:"Tornillo 4×40", kind:"screw", qty:12},
+    {id:"102", name:"Tarugo 8×30", kind:"dowel", qty:6},
+    {id:"103", name:"Clavo", kind:"nail", qty:14},
+    {id:"104", name:"Escuadra de pared", kind:"bracket", qty:1}
+  ],
+  steps: [
+    {n:1, title:"Coloca el lateral izquierdo", tip:"Ponlo de pie con los agujeros hacia dentro.", people:1, tools:[], confidence:1,
+      actions:[{key:"A1", part:"A", pos:[-391,500,0], lengthAxis:"y", thickAxis:"x", from:"+y"}], hardware:[]},
+    {n:2, title:"Encaja los tarugos y las baldas de abajo y arriba", tip:"Golpea los tarugos con suavidad; no los pegues.", people:1, tools:["martillo"], confidence:1,
+      actions:[{key:"B1", part:"B", pos:[0,60,0], lengthAxis:"x", thickAxis:"y", from:"+x"},
+               {key:"B2", part:"B", pos:[0,991,0], lengthAxis:"x", thickAxis:"y", from:"+x"}],
+      hardware:[{id:"102", qty:4}]},
+    {n:3, title:"Añade la balda del medio", tip:"La cara con canto blanco va hacia el frente.", people:1, tools:[], confidence:1,
+      actions:[{key:"B3", part:"B", pos:[0,500,0], lengthAxis:"x", thickAxis:"y", from:"+x"}],
+      hardware:[{id:"102", qty:2}]},
+    {n:4, title:"Cierra con el lateral derecho y atorníllalo", tip:"Aprieta a mano; no fuerces el tornillo.", people:2, tools:["destornillador"], confidence:1,
+      actions:[{key:"A2", part:"A", pos:[391,500,0], lengthAxis:"y", thickAxis:"x", from:"+x"}],
+      hardware:[{id:"101", qty:6, on:"A2"}]},
+    {n:5, title:"Atornilla el lateral izquierdo", tip:"Mismo tornillo, por la cara exterior.", people:1, tools:["destornillador"], confidence:1,
+      actions:[], hardware:[{id:"101", qty:6, on:"A1"}]},
+    {n:6, title:"Clava el fondo", tip:"Revisa que el mueble esté a escuadra antes de clavar.", people:1, tools:["martillo"], confidence:1,
+      actions:[{key:"C1", part:"C", pos:[0,500,-151.5], lengthAxis:"y", thickAxis:"z", from:"-z"}],
+      hardware:[{id:"103", qty:14, on:"C1"}]},
+    {n:7, title:"Fija el mueble a la pared", tip:"Usa tacos adecuados para tu pared. Evita que se vuelque.", people:1, tools:["taladro"], confidence:1,
+      actions:[], hardware:[{id:"104", qty:1, at:[[0,965,-140]], dir:"+y"}]}
+  ]
+};
+
+/* =========================================================
+   Plan normalization + validation
+   ========================================================= */
+function normAxis(a, d){ a = String(a || "").toLowerCase().replace(/[^xyz]/g, ""); return AX.includes(a) ? a : d; }
+function normDir(d, def){ d = String(d || "").toLowerCase().replace(/\s/g,""); if (/^[xyz]$/.test(d)) d = "+" + d; return DIRS.includes(d) ? d : def; }
+function normHwKind(k, name){
+  const s = String(k || "").toLowerCase();
+  if (HW[k]) return k;
+  for (const [a, v] of Object.entries(HW_ALIASES)) if (s.includes(a)) return v;
+  const n = String(name || "").toLowerCase();
+  for (const [a, v] of Object.entries(HW_ALIASES)) if (n.includes(a)) return v;
+  return "other";
+}
+function normalizePlan(p){
+  p = p && typeof p === "object" ? p : {};
+  const plan = {title: String(p.title || "Mi mueble"), notes: String(p.notes || ""), parts: [], hardware: [], steps: []};
+  (Array.isArray(p.parts) ? p.parts : []).forEach((x, i) => {
+    const kind = PART_KINDS[x.kind] ? x.kind : (num(x.t, 18) <= 6 ? "panel" : "board");
+    plan.parts.push({id: String(x.id ?? String.fromCharCode(65 + i)), name: String(x.name || "Pieza"), kind,
+      l: Math.max(1, num(x.l, 600)), w: Math.max(1, num(x.w, 300)), t: Math.max(1, num(x.t, kind === "panel" ? 3 : 18)), qty: Math.max(1, Math.round(num(x.qty, 1)))});
+  });
+  (Array.isArray(p.hardware) ? p.hardware : []).forEach((x, i) => {
+    plan.hardware.push({id: String(x.id ?? (100 + i)), name: String(x.name || ""), kind: normHwKind(x.kind, x.name), qty: Math.max(0, Math.round(num(x.qty, 0)))});
+  });
+  const used = {};
+  (Array.isArray(p.steps) ? p.steps : []).forEach((s, i) => {
+    const st = {n: i + 1, title: String(s.title || `Paso ${i + 1}`), tip: String(s.tip || ""), people: clamp(Math.round(num(s.people, 1)), 1, 4),
+      tools: Array.isArray(s.tools) ? s.tools.map(String).slice(0, 4) : [], confidence: clamp(num(s.confidence, .7), 0, 1), actions: [], hardware: []};
+    if (s.source && typeof s.source === "object" && Array.isArray(s.source.box) && s.source.box.length === 4)
+      st.source = {page: Math.max(1, Math.round(num(s.source.page, 1))), box: s.source.box.map(v => clamp(num(v, 0), 0, 1))};
+    (Array.isArray(s.actions) ? s.actions : []).forEach(a => {
+      const part = String(a.part ?? "");
+      used[part] = (used[part] || 0) + 1;
+      const la = normAxis(a.lengthAxis, "x");
+      let ta = normAxis(a.thickAxis, la === "y" ? "x" : "y"); if (ta === la) ta = AX.find(q => q !== la);
+      const pos = Array.isArray(a.pos) ? a.pos.slice(0, 3).map(v => num(v, 0)) : [0, 0, 0];
+      while (pos.length < 3) pos.push(0);
+      st.actions.push({key: String(a.key || `${part}${used[part]}`), part, pos, lengthAxis: la, thickAxis: ta, from: normDir(a.from, "")});
+    });
+    (Array.isArray(s.hardware) ? s.hardware : []).forEach(h => {
+      const o = {id: String(h.id ?? ""), qty: Math.max(1, Math.round(num(h.qty, 1)))};
+      if (h.on) o.on = String(h.on);
+      if (Array.isArray(h.at)) { o.at = h.at.filter(Array.isArray).map(q => [num(q[0]), num(q[1]), num(q[2])]); o.dir = normDir(h.dir, "+y"); }
+      st.hardware.push(o);
+    });
+    plan.steps.push(st);
+  });
+  // ensure unique keys
+  const seen = new Set();
+  plan.steps.forEach(s => s.actions.forEach(a => { let k = a.key, j = 2; while (seen.has(k)) k = a.key + "_" + j++; a.key = k; seen.add(k); }));
+  // hardware referenced but not declared
+  const hwIds = new Set(plan.hardware.map(h => h.id));
+  plan.steps.forEach(s => s.hardware.forEach(h => { if (!hwIds.has(h.id) && h.id) { plan.hardware.push({id: h.id, name: "", kind: "other", qty: 0}); hwIds.add(h.id); } }));
+  return plan;
+}
+
+function validate(plan, layout){
+  const W = [];
+  const partById = Object.fromEntries(plan.parts.map(p => [p.id, p]));
+  const useP = {}, useH = {};
+  plan.steps.forEach(s => {
+    s.actions.forEach(a => {
+      if (!partById[a.part]) W.push({step: s.n, msg: `La pieza "${a.part}" no está en el despiece.`});
+      useP[a.part] = (useP[a.part] || 0) + 1;
+    });
+    s.hardware.forEach(h => useH[h.id] = (useH[h.id] || 0) + h.qty);
+  });
+  plan.parts.forEach(p => { const u = useP[p.id] || 0;
+    if (u !== p.qty) W.push({msg: `Pieza ${p.id} (${p.name}): el despiece dice ${p.qty} y los pasos usan ${u}.`}); });
+  plan.hardware.forEach(h => { const u = useH[h.id] || 0;
+    if (h.qty && u !== h.qty) W.push({msg: `Herraje ${h.id}${h.name ? " (" + h.name + ")" : ""}: el despiece dice ${h.qty} y los pasos usan ${u}.`}); });
+  if (layout) {
+    const inst = layout.instances;
+    for (let i = 0; i < inst.length; i++) {
+      const A = inst[i];
+      for (let j = 0; j < i; j++) {
+        const B = inst[j];
+        const ov = [0,1,2].map(k => Math.min(A.max[k], B.max[k]) - Math.max(A.min[k], B.min[k]));
+        if (ov.every(v => v > 1.5)) W.push({step: A.step, msg: `${A.key} se superpone con ${B.key} (${Math.round(Math.min(...ov))} mm). Revisa su posición.`});
+      }
+      if (i > 0 && A.min[1] > 2 && !layout.touching(A)) W.push({step: A.step, msg: `${A.key} queda flotando: no toca ninguna otra pieza.`});
+    }
+  }
+  return W;
+}
+
+/* =========================================================
+   Layout: resolve each step into placed objects + schedule
+   ========================================================= */
+function partSize(part, a){
+  const s = [0,0,0];
+  const li = AX.indexOf(a.lengthAxis), ti = AX.indexOf(a.thickAxis);
+  const wi = [0,1,2].find(k => k !== li && k !== ti);
+  if (part.kind === "cylinder") { s[li] = part.l; s[ti] = part.w; s[wi] = part.w; }
+  else { s[li] = part.l; s[ti] = part.t; s[wi] = part.w; }
+  return s;
+}
+function dirVec(d){ const v = [0,0,0]; if (!d) return v; v[AX.indexOf(d[1])] = d[0] === "-" ? -1 : 1; return v; }
+
+function buildLayout(plan){
+  const partById = Object.fromEntries(plan.parts.map(p => [p.id, p]));
+  const fallback = {id:"?", name:"Pieza", kind:"board", l:400, w:200, t:18};
+  const instances = [];  // {key, part, step, pos, size, min, max, cyl, axis, from}
+  const steps = [];
+  const byKey = {};
+  const TOL = 3;
+
+  function contacts(P, others){
+    const res = [];
+    for (const O of others) {
+      if (O === P) continue;
+      for (let a = 0; a < 3; a++) {
+        let c = null, s = 0;
+        if (Math.abs(P.max[a] - O.min[a]) < TOL) { c = O.min[a]; s = -1; }
+        else if (Math.abs(P.min[a] - O.max[a]) < TOL) { c = O.max[a]; s = 1; }
+        if (c === null) continue;
+        const o1 = (a + 1) % 3, o2 = (a + 2) % 3;
+        const r1 = [Math.max(P.min[o1], O.min[o1]), Math.min(P.max[o1], O.max[o1])];
+        const r2 = [Math.max(P.min[o2], O.min[o2]), Math.min(P.max[o2], O.max[o2])];
+        if (r1[1] - r1[0] > 2 && r2[1] - r2[0] > 2) res.push({axis: a, c, s, o1, o2, r1, r2, t: P.max[a] - P.min[a], other: O});
+      }
+    }
+    return res;
+  }
+  function touching(P){
+    const others = instances.filter(o => o !== P);
+    if (contacts(P, others).length) return true;
+    // also accept partial overlaps (e.g. inserted in a groove)
+    return others.some(O => [0,1,2].every(k => Math.min(P.max[k], O.max[k]) - Math.max(P.min[k], O.min[k]) > -TOL));
+  }
+
+  plan.steps.forEach((st, si) => {
+    const before = instances.slice();
+    const stepParts = [];
+    st.actions.forEach(a => {
+      const part = partById[a.part] || fallback;
+      const size = partSize(part, a);
+      const inst = {key: a.key, part, step: st.n, pos: a.pos.slice(), size,
+        min: a.pos.map((v, k) => v - size[k] / 2), max: a.pos.map((v, k) => v + size[k] / 2),
+        cyl: part.kind === "cylinder", axis: AX.indexOf(a.lengthAxis), action: a};
+      instances.push(inst); byKey[a.key] = inst; stepParts.push(inst);
+    });
+    // approach vectors
+    const placedNow = instances.slice();
+    const ctr = bboxOf(placedNow).center;
+    stepParts.forEach(P => {
+      let d = P.action.from;
+      if (!d) {
+        if (!before.length && P === stepParts[0]) d = "+y";
+        else {
+          const v = P.pos.map((x, k) => x - ctr[k]);
+          const k = [0,1,2].reduce((m, k) => Math.abs(v[k]) > Math.abs(v[m]) ? k : m, 0);
+          d = (v[k] >= 0 ? "+" : "-") + AX[k];
+          if (Math.abs(v[k]) < 5) d = "+y";
+        }
+      }
+      const dv = dirVec(d);
+      const far = Math.max(260, Math.max(...P.size) * .55);
+      P.fromDir = d; P.start = P.pos.map((x, k) => x + dv[k] * far);
+    });
+    // hardware
+    const hwItems = [];
+    st.hardware.forEach((h, hi) => {
+      const meta = plan.hardware.find(x => x.id === h.id) || {kind: "other", name: ""};
+      const K = HW[meta.kind] || HW.other;
+      const groupItems = [];
+      if (h.at && h.at.length) {
+        const dv = dirVec(h.dir || "+y");
+        h.at.forEach(pt => groupItems.push(makeHw(K, meta.kind, pt, dv, dv)));
+      } else {
+        let through = h.on && byKey[h.on] ? [byKey[h.on]] : stepParts.slice();
+        if (!through.length) through = instances.slice(-1);
+        let cs = [];
+        through.forEach(P => {
+          const others = K.phase === "pre" && !h.on ? before : instances.filter(o => o !== P);
+          contacts(P, others).forEach(c => cs.push({...c, P}));
+        });
+        // dedupe symmetric contacts (same plane & rect)
+        cs = cs.filter((c, i) => cs.findIndex(d => d.axis === c.axis && Math.abs(d.c - c.c) < 1 && Math.abs(d.r1[0]-c.r1[0]) < 1 && Math.abs(d.r2[0]-c.r2[0]) < 1) === i);
+        const q = h.qty;
+        if (cs.length) {
+          const base = Math.floor(q / cs.length); let rem = q - base * cs.length;
+          const order = cs.map((c, i) => [i, (c.r1[1]-c.r1[0]) * (c.r2[1]-c.r2[0])]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+          const counts = cs.map(() => base); for (const i of order) { if (!rem) break; counts[i]++; rem--; }
+          cs.forEach((c, i) => {
+            const k = counts[i]; if (!k) return;
+            const len1 = c.r1[1] - c.r1[0], len2 = c.r2[1] - c.r2[0];
+            const [ua, ur, va, vr] = len1 >= len2 ? [c.o1, c.r1, c.o2, c.r2] : [c.o2, c.r2, c.o1, c.r1];
+            // grid: if k is large and both sides long, use two rows
+            const ulen = ur[1] - ur[0], vlen = vr[1] - vr[0];
+            const rows = (k >= 6 && vlen > 250) ? 2 : 1;
+            const perRow = Math.ceil(k / rows);
+            let made = 0;
+            for (let r = 0; r < rows; r++) {
+              const n = Math.min(perRow, k - made);
+              const vpos = rows === 1 ? (vr[0] + vr[1]) / 2 : vr[0] + vlen * (r === 0 ? .15 : .85);
+              const inset = Math.min(50, ulen * .15);
+              for (let j = 0; j < n; j++) {
+                const u = n === 1 ? (ur[0] + ur[1]) / 2 : ur[0] + inset + (ulen - 2 * inset) * j / (n - 1);
+                const p = [0,0,0]; p[ua] = u; p[va] = vpos; p[c.axis] = c.c;
+                const nrm = [0,0,0]; nrm[c.axis] = c.s;      // points from the other part toward P
+                let center = p.slice();
+                if (K.through && c.t > 120) { // long part (a leg): the screw goes in through the other part
+                  const tO = c.other.max[c.axis] - c.other.min[c.axis];
+                  const outer = c.c - c.s * tO; center[c.axis] = outer + c.s * K.L / 2; nrm[c.axis] = -c.s;
+                } else if (K.through) { const outer = c.c + c.s * c.t; center[c.axis] = outer - c.s * K.L / 2; }
+                if (K.box) center[c.axis] = c.c + c.s * (c.t + K.L / 2);
+                groupItems.push(makeHw(K, meta.kind, center, nrm, nrm));
+                made++;
+              }
+            }
+          });
+        } else {
+          const P = through[0];
+          const c = P ? P.pos : [0, 0, 0];
+          for (let j = 0; j < q; j++) groupItems.push(makeHw(K, meta.kind, [c[0] + (j - (q - 1) / 2) * 40, (P ? P.max[1] : 0) + 30, c[2]], [0,1,0], [0,1,0]));
+        }
+      }
+      hwItems.push({id: h.id, meta, K, phase: K.phase, items: groupItems, qty: h.qty});
+    });
+    // schedule
+    const ev = []; let t = .8;
+    hwItems.filter(g => g.phase === "pre").forEach(g => { ev.push({type: "hw", g, t0: t, t1: t + 1.0}); t += 1.05; });
+    stepParts.forEach(P => { ev.push({type: "part", P, t0: t, t1: t + 1.35}); t += 1.1; });
+    if (stepParts.length) t += .3;
+    hwItems.filter(g => g.phase !== "pre").forEach(g => { ev.push({type: "hw", g, t0: t, t1: t + 1.1}); t += 1.15; });
+    steps.push({st, parts: stepParts, hw: hwItems, ev, dur: t + 1.1, before: before.length});
+  });
+
+  function makeHw(K, kind, center, axisVec, nrm){
+    const off = 70 + K.L;
+    const start = center.map((v, k) => v + nrm[k] * off);
+    return {kind, K, pos: center, start, axis: axisVec.map(Math.abs).indexOf(1) >= 0 ? axisVec : [0,1,0]};
+  }
+  const all = bboxOf(instances);
+  return {instances, steps, byKey, touching, bbox: all};
+}
+function bboxOf(list){
+  const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+  list.forEach(o => { for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], o.min ? o.min[k] : o.pos[k]); mx[k] = Math.max(mx[k], o.max ? o.max[k] : o.pos[k]); } });
+  if (!list.length) return {min: [-300,0,-300], max: [300,600,300], center: [0,300,0], radius: 500};
+  const center = mn.map((v, k) => (v + mx[k]) / 2);
+  const radius = Math.hypot(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2]) / 2;
+  return {min: mn, max: mx, center, radius: Math.max(radius, 120)};
+}
+
+/* =========================================================
+   Tiny WebGL renderer (no dependencies)
+   ========================================================= */
+const M = {
+  ident(){ const m = new Float32Array(16); m[0]=m[5]=m[10]=m[15]=1; return m; },
+  mul(a, b){ const o = new Float32Array(16);
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k*4 + r] * b[c*4 + k]; o[c*4 + r] = s; } return o; },
+  persp(fovy, asp, n, f){ const t = 1 / Math.tan(fovy / 2), m = new Float32Array(16);
+    m[0] = t / asp; m[5] = t; m[10] = (f + n) / (n - f); m[11] = -1; m[14] = 2 * f * n / (n - f); return m; },
+  lookAt(e, c, up){
+    let z = norm(sub(e, c)), x = norm(cross(up, z)), y = cross(z, x);
+    const m = new Float32Array(16);
+    m[0]=x[0]; m[4]=x[1]; m[8]=x[2];  m[12]=-dot(x,e);
+    m[1]=y[0]; m[5]=y[1]; m[9]=y[2];  m[13]=-dot(y,e);
+    m[2]=z[0]; m[6]=z[1]; m[10]=z[2]; m[14]=-dot(z,e);
+    m[15]=1; return m; },
+  model(t, axes, s){ // axes: 3 column vectors (unit), s: scale per local axis
+    const m = new Float32Array(16);
+    for (let i = 0; i < 3; i++) for (let r = 0; r < 3; r++) m[i*4 + r] = axes[i][r] * s[i];
+    m[12] = t[0]; m[13] = t[1]; m[14] = t[2]; m[15] = 1; return m; }
+};
+function sub(a, b){ return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
+function dot(a, b){ return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
+function cross(a, b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+function norm(a){ const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0]/l, a[1]/l, a[2]/l]; }
+function lerp3(a, b, t){ return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t, a[2] + (b[2]-a[2])*t]; }
+
+const R = {
+  gl: null, prog: null, buf: {}, ok: false,
+  init(canvas){
+    const gl = canvas.getContext("webgl", {antialias: true, preserveDrawingBuffer: true, premultipliedAlpha: false});
+    if (!gl) return false;
+    this.gl = gl;
+    const vs = `attribute vec3 p; attribute vec3 n; uniform mat4 mvp; uniform mat4 mdl; varying vec3 vn;
+      void main(){ vn = normalize(mat3(mdl) * n); gl_Position = mvp * vec4(p, 1.0); }`;
+    const fs = `precision mediump float; varying vec3 vn; uniform vec3 col; uniform float lit; uniform float amb; uniform float alpha; uniform vec3 L1; uniform vec3 L2;
+      void main(){ float d = max(dot(normalize(vn), L1), 0.0) * 0.75 + max(dot(normalize(vn), L2), 0.0) * 0.25;
+        vec3 c = mix(col, col * (amb + (1.0 - amb) * d), lit); gl_FragColor = vec4(c, alpha); }`;
+    const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+    const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
+    this.prog = p; gl.useProgram(p);
+    this.loc = {p: gl.getAttribLocation(p, "p"), n: gl.getAttribLocation(p, "n")};
+    ["mvp","mdl","col","lit","amb","alpha","L1","L2"].forEach(k => this.loc[k] = gl.getUniformLocation(p, k));
+    this.buf.box = this.mesh(boxGeo());
+    this.buf.cyl = this.mesh(cylGeo(20));
+    this.buf.grid = this.lines(gridGeo());
+    gl.enable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    this.ok = true; return true;
+  },
+  mesh(g){ const gl = this.gl;
+    const tri = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, tri); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(g.tri), gl.STATIC_DRAW);
+    const edg = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, edg); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(g.edge), gl.STATIC_DRAW);
+    return {tri, triN: g.tri.length / 6, edg, edgN: g.edge.length / 6}; },
+  lines(arr){ const gl = this.gl; const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW); return {edg: b, edgN: arr.length / 6}; },
+  bind(b){ const gl = this.gl; gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.enableVertexAttribArray(this.loc.p); gl.vertexAttribPointer(this.loc.p, 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(this.loc.n); gl.vertexAttribPointer(this.loc.n, 3, gl.FLOAT, false, 24, 12); },
+  frame(vp, bg, objs, style){
+    const gl = this.gl, L = this.loc;
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniform3fv(L.L1, norm([.45, .85, .55])); gl.uniform3fv(L.L2, norm([-.6, .3, -.4]));
+    // floor grid
+    gl.uniformMatrix4fv(L.mvp, false, vp); gl.uniformMatrix4fv(L.mdl, false, M.ident());
+    gl.uniform3fv(L.col, style.grid); gl.uniform1f(L.lit, 0); gl.uniform1f(L.alpha, 1);
+    this.bind(this.buf.grid.edg); gl.drawArrays(gl.LINES, 0, this.buf.grid.edgN);
+    // opaque first, then transparent
+    const sorted = objs.slice().sort((a, b) => (a.alpha < 1) - (b.alpha < 1));
+    for (const o of sorted) {
+      const g = this.buf[o.geo];
+      const mvp = M.mul(vp, o.m);
+      gl.uniformMatrix4fv(L.mvp, false, mvp); gl.uniformMatrix4fv(L.mdl, false, o.m);
+      gl.uniform1f(L.alpha, o.alpha);
+      gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(1, 1);
+      gl.uniform3fv(L.col, o.col); gl.uniform1f(L.lit, 1); gl.uniform1f(L.amb, style.amb);
+      gl.depthMask(o.alpha >= 1);
+      this.bind(g.tri); gl.drawArrays(gl.TRIANGLES, 0, g.triN);
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      if (o.edge) { gl.uniform3fv(L.col, style.line); gl.uniform1f(L.lit, 0); this.bind(g.edg); gl.drawArrays(gl.LINES, 0, g.edgN); }
+      gl.depthMask(true);
+    }
+  }
+};
+function boxGeo(){
+  const tri = [], edge = [];
+  const F = [ // normal, u, v
+    [[1,0,0],[0,1,0],[0,0,1]], [[-1,0,0],[0,0,1],[0,1,0]],
+    [[0,1,0],[0,0,1],[1,0,0]], [[0,-1,0],[1,0,0],[0,0,1]],
+    [[0,0,1],[1,0,0],[0,1,0]], [[0,0,-1],[0,1,0],[1,0,0]]];
+  for (const [n, u, v] of F) {
+    const c = n.map(x => x * .5);
+    const P = (a, b) => [c[0] + (u[0]*a + v[0]*b)*.5, c[1] + (u[1]*a + v[1]*b)*.5, c[2] + (u[2]*a + v[2]*b)*.5];
+    const q = [P(-1,-1), P(1,-1), P(1,1), P(-1,1)];
+    for (const i of [0,1,2, 0,2,3]) tri.push(...q[i], ...n);
+  }
+  const V = [];
+  for (let i = 0; i < 8; i++) V.push([(i & 1) ? .5 : -.5, (i & 2) ? .5 : -.5, (i & 4) ? .5 : -.5]);
+  [[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]].forEach(([a, b]) => edge.push(...V[a], 0,0,0, ...V[b], 0,0,0));
+  return {tri, edge};
+}
+function cylGeo(n){ // axis = local Y, height 1, diameter 1
+  const tri = [], edge = [];
+  for (let i = 0; i < n; i++) {
+    const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2;
+    const c0 = [Math.cos(a0) * .5, Math.sin(a0) * .5], c1 = [Math.cos(a1) * .5, Math.sin(a1) * .5];
+    const n0 = [Math.cos(a0), 0, Math.sin(a0)], n1 = [Math.cos(a1), 0, Math.sin(a1)];
+    const b0 = [c0[0], -.5, c0[1]], b1 = [c1[0], -.5, c1[1]], t0 = [c0[0], .5, c0[1]], t1 = [c1[0], .5, c1[1]];
+    tri.push(...b0, ...n0, ...b1, ...n1, ...t1, ...n1, ...b0, ...n0, ...t1, ...n1, ...t0, ...n0);
+    tri.push(0, .5, 0, 0,1,0, ...t1, 0,1,0, ...t0, 0,1,0);
+    tri.push(0, -.5, 0, 0,-1,0, ...b0, 0,-1,0, ...b1, 0,-1,0);
+    edge.push(...t0, 0,0,0, ...t1, 0,0,0, ...b0, 0,0,0, ...b1, 0,0,0);
+  }
+  return {tri, edge};
+}
+function gridGeo(){
+  const a = [], h = 2000, st = 100;
+  for (let x = -h; x <= h; x += st) { a.push(x, 0, -h, 0,0,0, x, 0, h, 0,0,0); a.push(-h, 0, x, 0,0,0, h, 0, x, 0,0,0); }
+  return a;
+}
+function axesFor(v){ // returns 3 orthonormal column vectors with column 1 = v
+  const y = norm(v); const ref = Math.abs(y[1]) < .9 ? [0,1,0] : [1,0,0];
+  const x = norm(cross(ref, y)), z = cross(x, y); return [x, y, z];
+}
+
+/* =========================================================
+   Player
+   ========================================================= */
+const P = {
+  step: 0, t: 0, playing: false, speed: 1, style: "manual", voice: false,
+  cam: {yaw: .6, pitch: .38, dist: 2400, target: [0, 500, 0]},
+  want: null, auto: true, last: 0, rec: null,
+  colors(){
+    const cs = getComputedStyle(document.documentElement);
+    const hex = v => { v = cs.getPropertyValue(v).trim(); const m = v.match(/^#([0-9a-f]{6})$/i); if (!m) return [1,1,1];
+      const n = parseInt(m[1], 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+    const paper = hex("--paper"), ink = hex("--ink");
+    const dark = (paper[0] + paper[1] + paper[2]) < 1.2;
+    return this.style === "manual"
+      ? {bg: paper, part: dark ? [.86,.87,.89] : [1,1,1], done: dark ? [.78,.80,.83] : [.97,.97,.96], active: [.98,.84,.36], line: [.09,.1,.12], grid: dark ? [.22,.24,.27] : [.86,.87,.84], amb: .82, inkText: ink}
+      : {bg: paper, part: [.86,.71,.50], done: [.80,.65,.45], active: [.98,.80,.30], line: dark ? [.15,.1,.06] : [.33,.22,.12], grid: dark ? [.22,.24,.27] : [.86,.87,.84], amb: .55, inkText: ink};
+  }
+};
+
+function stepTarget(si){
+  const L = S.layout; if (!L) return null;
+  const sd = L.steps[si];
+  const shown = L.instances.filter(o => o.step <= sd.st.n);
+  const bb = bboxOf(shown.length ? shown : L.instances);
+  // look toward the approach side of the first moving part
+  let yaw = .6, pitch = .38;
+  const f = sd.parts[0]?.fromDir;
+  if (f === "-z") yaw = Math.PI - .55;
+  else if (f === "-x") yaw = -.75;
+  else if (f === "+x") yaw = .85;
+  if (f === "-y") pitch = -.25;
+  // if only hardware, look at its centroid
+  let center = bb.center, radius = bb.radius;
+  if (!sd.parts.length && sd.hw.length) {
+    const pts = sd.hw.flatMap(g => g.items.map(i => ({pos: i.pos})));
+    const hb = bboxOf(pts);
+    center = lerp3(bb.center, hb.center, .35); radius = Math.max(bb.radius * .9, 250);
+    const first = sd.hw[0].items[0];
+    if (first) { const a = first.axis; if (Math.abs(a[2]) > .5) yaw = a[2] < 0 ? Math.PI - .55 : .6; if (Math.abs(a[0]) > .5) yaw = a[0] < 0 ? -.8 : .8; }
+    const dz = hb.center[2] - bb.center[2], dx = hb.center[0] - bb.center[0];
+    if (dz < -(bb.max[2] - bb.min[2]) * .3) yaw = Math.PI - .55;
+    else if (Math.abs(dx) > (bb.max[0] - bb.min[0]) * .3) yaw = dx < 0 ? -.8 : .8;
+    pitch = Math.max(pitch, hb.center[1] > bb.center[1] + 100 ? .55 : pitch);
+  }
+  const cv = $("#gl"), asp = cv.clientWidth && cv.clientHeight ? cv.clientWidth / cv.clientHeight : 1;
+  const half = Math.min(.42, Math.atan(Math.tan(.42) * asp));
+  return {target: center, dist: radius / Math.sin(half) * 1.22, yaw, pitch};
+}
+
+function objectsAt(si, t, colors){
+  const L = S.layout, objs = [];
+  const sd = L.steps[si];
+  const live = new Map(); // key -> {pos, alpha, active}
+  L.instances.forEach(o => { if (o.step < sd.st.n) live.set(o.key, {pos: o.pos, alpha: 1, active: false}); });
+  const hwDraw = [];
+  L.steps.forEach((s, k) => { if (k < si) s.hw.forEach(g => g.items.forEach(it => hwDraw.push({it, pos: it.pos, alpha: 1, active: false}))); });
+  sd.ev.forEach(e => {
+    const p = clamp((t - e.t0) / (e.t1 - e.t0), 0, 1);
+    if (e.type === "part") {
+      if (t < e.t0) return;
+      live.set(e.P.key, {pos: lerp3(e.P.start, e.P.pos, ease(p)), alpha: clamp(p * 4, 0, 1), active: true});
+    } else {
+      if (t < e.t0) return;
+      e.g.items.forEach((it, j) => {
+        const q = clamp(p * 1.3 - j * .3 / Math.max(1, e.g.items.length), 0, 1);
+        hwDraw.push({it, pos: lerp3(it.start, it.pos, ease(q)), alpha: clamp(q * 5, 0, 1), active: true});
+      });
+    }
+  });
+  const ended = t >= sd.dur - .5;
+  for (const o of L.instances) {
+    const s = live.get(o.key); if (!s) continue;
+    const col = s.active && !ended ? colors.active : (o.step === sd.st.n ? colors.part : colors.done);
+    const axes = [[1,0,0],[0,1,0],[0,0,1]];
+    let m;
+    if (o.cyl) { const ax = axesFor(axes[o.axis]); const d = o.size[(o.axis + 1) % 3]; m = M.model(s.pos, ax, [d, o.size[o.axis], d]); }
+    else m = M.model(s.pos, axes, o.size);
+    objs.push({geo: o.cyl ? "cyl" : "box", m, col, alpha: s.alpha, edge: true});
+  }
+  for (const h of hwDraw) {
+    const K = h.it.K, col = h.active && !ended ? [.93,.42,.16] : K.color;
+    if (K.box) {
+      const ax = axesFor(h.it.axis);
+      objs.push({geo: "box", m: M.model(h.pos, ax, [K.d, K.L, K.d * (h.it.kind === "hinge" ? 1.4 : 1)]), col, alpha: h.alpha, edge: true});
+    } else {
+      const ax = axesFor(h.it.axis);
+      objs.push({geo: "cyl", m: M.model(h.pos, ax, [K.d, K.L, K.d]), col, alpha: h.alpha, edge: K.d >= 6});
+      if (h.it.kind === "screw" || h.it.kind === "nail") { // head on the outer end
+        const head = h.pos.map((v, k) => v + h.it.axis[k] * K.L / 2);
+        objs.push({geo: "cyl", m: M.model(head, ax, [K.d * 2.1, 3, K.d * 2.1]), col, alpha: h.alpha, edge: false});
+      }
+    }
+  }
+  return objs;
+}
+
+function vpMatrix(canvas){
+  const c = P.cam;
+  const eye = [c.target[0] + c.dist * Math.cos(c.pitch) * Math.sin(c.yaw), c.target[1] + c.dist * Math.sin(c.pitch), c.target[2] + c.dist * Math.cos(c.pitch) * Math.cos(c.yaw)];
+  const proj = M.persp(.84, canvas.width / canvas.height, Math.max(10, c.dist * .05), c.dist * 6 + 4000);
+  proj[9] = canvas.height > canvas.width ? .26 : .14; // lens shift: keep the furniture below the step card
+  return M.mul(proj, M.lookAt(eye, c.target, [0,1,0]));
+}
+
+function setStep(i, t = 0){
+  const L = S.layout; if (!L || !L.steps.length) return;
+  P.step = clamp(i, 0, L.steps.length - 1); P.t = t; P.auto = true;
+  P.want = stepTarget(P.step);
+  updateOverlay();
+  if (P.voice && P.playing) speakStep();
+}
+function updateOverlay(){
+  const L = S.layout, sd = L.steps[P.step], st = sd.st;
+  $("#ov-n").textContent = st.n;
+  $("#ov-title").textContent = st.title;
+  $("#ov-tip").textContent = st.tip;
+  const chips = [];
+  st.hardware.forEach(h => { const m = S.plan.hardware.find(x => x.id === h.id);
+    chips.push(`<span class="chip hw">${h.qty}× ${esc(m?.name || HW[m?.kind]?.label || "herraje")} ${esc(h.id)}</span>`); });
+  const pc = {}; st.actions.forEach(a => pc[a.part] = (pc[a.part] || 0) + 1);
+  Object.entries(pc).forEach(([id, q]) => { const p = S.plan.parts.find(x => x.id === id); chips.push(`<span class="chip">${q}× ${esc(p?.name || "pieza")} ${esc(id)}</span>`); });
+  if (st.people > 1) chips.push(`<span class="chip">${st.people} personas</span>`);
+  st.tools.forEach(t => chips.push(`<span class="chip">${esc(t)}</span>`));
+  $("#ov-chips").innerHTML = chips.join("");
+  $("#scrub").max = L.steps.length - 1; $("#scrub").value = P.step;
+  $("#stepcount").textContent = `${P.step + 1}/${L.steps.length}`;
+  // source crop
+  const src = st.source, pg = src && S.pages[src.page - 1];
+  if (pg) { cropSource(pg, src.box).then(u => { if (u) { $("#ov-src-img").src = u; $("#ov-src").hidden = false; } }); }
+  else $("#ov-src").hidden = true;
+}
+const cropCache = new Map();
+async function cropSource(pg, box){
+  const key = pg.id + box.join(","); if (cropCache.has(key)) return cropCache.get(key);
+  const img = await loadImg(pg.url); const [x0, y0, x1, y1] = box;
+  const w = Math.max(10, (x1 - x0) * img.width), h = Math.max(10, (y1 - y0) * img.height);
+  const c = document.createElement("canvas"); const sc = Math.min(1, 480 / Math.max(w, h)); c.width = w * sc; c.height = h * sc;
+  c.getContext("2d").drawImage(img, x0 * img.width, y0 * img.height, w, h, 0, 0, c.width, c.height);
+  const u = c.toDataURL("image/jpeg", .85); cropCache.set(key, u); return u;
+}
+function speakStep(){
+  if (window.Android?.speak) { try { const st = S.layout.steps[P.step].st; Android.speak(`Paso ${st.n}. ${st.title}. ${st.tip}`); } catch {} return; }
+  try { const st = S.layout.steps[P.step].st; speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(`Paso ${st.n}. ${st.title}. ${st.tip}`); u.lang = "es-ES"; u.rate = 1; speechSynthesis.speak(u); } catch {}
+}
+
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt = Math.min(.05, (ts - (P.last || ts)) / 1000); P.last = ts;
+  if (S.tab !== "ver" && !P.rec) return;
+  if (!R.ok || !S.layout || !S.layout.steps.length) return;
+  const cv = $("#gl"), dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (!P.rec) {
+    const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
+    if (w && h && (cv.width !== w || cv.height !== h)) { cv.width = w; cv.height = h; }
+  }
+  const sd = S.layout.steps[P.step];
+  if (P.playing) {
+    P.t += dt * P.speed;
+    if (P.t >= sd.dur) {
+      if (P.step < S.layout.steps.length - 1) setStep(P.step + 1);
+      else { P.t = sd.dur; setPlaying(false); if (P.rec) finishRec(); }
+    }
+  }
+  if (P.auto && P.want) { // smooth camera
+    const k = 1 - Math.exp(-dt * 2.6), c = P.cam, w = P.want;
+    c.target = lerp3(c.target, w.target, k); c.dist += (w.dist - c.dist) * k;
+    let dy = w.yaw - c.yaw; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI;
+    c.yaw += dy * k; c.pitch += (w.pitch - c.pitch) * k;
+  }
+  const col = P.colors();
+  R.frame(vpMatrix(cv), col.bg, objectsAt(P.step, P.t, col), col);
+  if (P.rec) compositeFrame(col);
+}
+function setPlaying(on){
+  P.playing = on; $("#b-play").textContent = on ? "❚❚" : "▶︎"; $("#b-play").setAttribute("aria-label", on ? "Pausar" : "Reproducir");
+  if (on) { const sd = S.layout.steps[P.step]; if (P.t >= sd.dur) { if (P.step === S.layout.steps.length - 1) setStep(0); else setStep(P.step + 1); } if (P.voice) speakStep(); }
+  else { try { speechSynthesis.cancel(); } catch {} try { window.Android?.stopSpeak?.(); } catch {} }
+}
+
+/* Orbit / zoom gestures */
+function initGestures(){
+  const el = $("#stage"); const pts = new Map(); let pinch0 = 0, dist0 = 0;
+  el.addEventListener("pointerdown", e => { if (e.target.closest(".src")) return; el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0]-b[0], a[1]-b[1]); dist0 = P.cam.dist; } });
+  el.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId)) return; const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    P.auto = false;
+    if (pts.size === 1) { P.cam.yaw -= (e.clientX - prev[0]) * .008; P.cam.pitch = clamp(P.cam.pitch + (e.clientY - prev[1]) * .006, -1.2, 1.45); }
+    else if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a[0]-b[0], a[1]-b[1]); if (pinch0) P.cam.dist = clamp(dist0 * pinch0 / d, 150, 12000); }
+  });
+  const up = e => { pts.delete(e.pointerId); pinch0 = 0; };
+  el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  el.addEventListener("wheel", e => { e.preventDefault(); P.auto = false; P.cam.dist = clamp(P.cam.dist * Math.exp(e.deltaY * .0012), 150, 12000); }, {passive: false});
+}
+
+/* =========================================================
+   Recording (canvas → MediaRecorder, overlay drawn in)
+   ========================================================= */
+function pickMime(){
+  const c = ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+  return c.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) || "";
+}
+function startRec(){
+  if (!window.MediaRecorder) { toast("Este navegador no permite grabar video."); return; }
+  const gl = $("#gl");
+  const W = gl.width, H = gl.height;
+  const comp = document.createElement("canvas"); comp.width = W; comp.height = H;
+  const stream = comp.captureStream(30);
+  const mime = pickMime();
+  let mr; try { mr = new MediaRecorder(stream, mime ? {mimeType: mime, videoBitsPerSecond: 6e6} : undefined); } catch { toast("No se pudo iniciar la grabación."); return; }
+  const chunks = []; mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mr.onstop = () => { const type = mr.mimeType || mime || "video/webm"; const blob = new Blob(chunks, {type}); showVideo(blob, type); };
+  P.rec = {mr, comp, ctx: comp.getContext("2d"), t0: performance.now(), W, H};
+  mr.start(250);
+  $("#b-rec").innerHTML = `<span class="recdot"></span>Grabando… toca para parar`;
+  setStep(0); setPlaying(true);
+}
+function finishRec(){
+  const r = P.rec; if (!r) return; P.rec = null;
+  setTimeout(() => { try { r.mr.stop(); } catch {} }, 400);
+  $("#b-rec").innerHTML = `<span class="recdot"></span>Grabar video`;
+}
+function compositeFrame(col){
+  const r = P.rec, c = r.ctx, W = r.W, H = r.H, u = Math.max(1, Math.min(W, H) / 400);
+  c.drawImage($("#gl"), 0, 0, W, H);
+  const st = S.layout.steps[P.step].st;
+  const ink = `rgb(${col.inkText.map(v => Math.round(v * 255)).join(",")})`;
+  const sheet = getComputedStyle(document.documentElement).getPropertyValue("--sheet").trim() || "#fff";
+  // step badge
+  const bx = 14 * u, by = 14 * u, bs = 54 * u;
+  c.fillStyle = sheet; c.strokeStyle = ink; c.lineWidth = 2.5 * u;
+  roundRect(c, bx, by, bs, bs, 10 * u); c.fill(); c.stroke();
+  c.fillStyle = ink; c.font = `800 ${32 * u}px Archivo, Arial, sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillText(String(st.n), bx + bs / 2, by + bs / 2 + 1);
+  // title + hardware line
+  c.textAlign = "left"; c.textBaseline = "alphabetic";
+  c.font = `700 ${15 * u}px Archivo, Arial, sans-serif`;
+  wrapText(c, st.title, bx + bs + 12 * u, by + 18 * u, W - bx - bs - 26 * u, 18 * u, 2);
+  const hw = st.hardware.map(h => { const m = S.plan.hardware.find(x => x.id === h.id); return `${h.qty}× ${m?.name || HW[m?.kind]?.label || "herraje"}`; }).join("   ");
+  if (hw) { c.font = `600 ${12 * u}px "IBM Plex Mono", monospace`; c.fillText(hw, bx + bs + 12 * u, by + 56 * u); }
+  c.font = `600 ${10 * u}px "IBM Plex Mono", monospace`; c.globalAlpha = .6;
+  c.fillText(S.plan.title, 14 * u, H - 14 * u); c.globalAlpha = 1;
+}
+function roundRect(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function wrapText(c, text, x, y, maxW, lh, maxLines){
+  const words = String(text).split(/\s+/); let line = "", n = 0;
+  for (const w of words) { const t = line ? line + " " + w : w;
+    if (c.measureText(t).width > maxW && line) { c.fillText(line, x, y + n * lh); line = w; if (++n >= maxLines) return; } else line = t; }
+  if (line) c.fillText(line, x, y + n * lh);
+}
+let lastVideo = null;
+function showVideo(blob, type){
+  lastVideo = {blob, ext: /mp4/.test(type) ? "mp4" : "webm"};
+  const v = $("#vid"); if (v.src) URL.revokeObjectURL(v.src); v.src = URL.createObjectURL(blob);
+  $("#vid-info").textContent = `${(blob.size / 1048576).toFixed(1)} MB · ${lastVideo.ext.toUpperCase()} · sin audio`;
+  $("#b-savevid").hidden = !S.downloads;
+  try { $("#dlg-video").showModal(); } catch { $("#dlg-video").setAttribute("open", ""); }
+}
+
+/* =========================================================
+   Photos
+   ========================================================= */
+function loadImg(src){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function addFiles(files){
+  for (const f of files) {
+    if (!/^image\//.test(f.type) && !/\.(jpe?g|png|webp|heic|gif)$/i.test(f.name)) { toast(`"${f.name}" no es una imagen. Exporta el PDF como imágenes.`); continue; }
+    try { const pg = await prepPage(f, 0); S.pages.push(pg); } catch { toast(`No pude abrir "${f.name}".`); }
+  }
+  renderPages();
+}
+async function prepPage(file, rot, src){
+  const url0 = src || URL.createObjectURL(file);
+  const img = await loadImg(url0);
+  const maxSide = 2000, sc = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+  const c = document.createElement("canvas"); const swap = rot % 180 !== 0;
+  c.width = swap ? h : w; c.height = swap ? w : h;
+  const x = c.getContext("2d"); x.translate(c.width / 2, c.height / 2); x.rotate(rot * Math.PI / 180); x.drawImage(img, -w / 2, -h / 2, w, h);
+  if ($("#opt-contrast").checked) enhance(x, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", .9));
+  return {id: Math.random().toString(36).slice(2), blob, url: URL.createObjectURL(blob), orig: url0, rot};
+}
+function enhance(ctx, w, h){ // grayscale + auto levels: line drawings read better
+  const d = ctx.getImageData(0, 0, w, h), a = d.data, hist = new Uint32Array(256);
+  for (let i = 0; i < a.length; i += 4) { const g = (a[i] * .3 + a[i+1] * .59 + a[i+2] * .11) | 0; a[i] = g; hist[g]++; }
+  const n = w * h; let lo = 0, hi = 255, acc = 0;
+  for (let i = 0; i < 256; i++) { acc += hist[i]; if (acc > n * .01) { lo = i; break; } }
+  acc = 0; for (let i = 255; i >= 0; i--) { acc += hist[i]; if (acc > n * .05) { hi = i; break; } }
+  const sc = 255 / Math.max(1, hi - lo);
+  for (let i = 0; i < a.length; i += 4) { const v = clamp((a[i] - lo) * sc, 0, 255); a[i] = a[i+1] = a[i+2] = v; }
+  ctx.putImageData(d, 0, 0);
+}
+function renderPages(){
+  const el = $("#pages");
+  if (!S.pages.length) { el.innerHTML = `<div class="empty">Todavía no hay páginas.</div>`; }
+  else el.innerHTML = `<div class="pages">${S.pages.map((p, i) => `
+    <div class="pg"><img src="${p.url}" alt="Página ${i + 1}"><span class="num">${i + 1}</span>
+      <div class="acts">
+        <button data-pg="rot" data-i="${i}" aria-label="Girar página ${i + 1}">⟳</button>
+        ${i > 0 ? `<button data-pg="up" data-i="${i}" aria-label="Mover página ${i + 1} antes">←</button>` : ""}
+        <button data-pg="del" data-i="${i}" aria-label="Quitar página ${i + 1}">✕</button>
+      </div></div>`).join("")}</div>`;
+  $("#b-interpret").disabled = !S.pages.length || !S.sample;
+}
+$("#pages").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-pg]"); if (!b) return; const i = +b.dataset.i, p = S.pages[i];
+  if (b.dataset.pg === "del") S.pages.splice(i, 1);
+  if (b.dataset.pg === "up") [S.pages[i - 1], S.pages[i]] = [S.pages[i], S.pages[i - 1]];
+  if (b.dataset.pg === "rot") S.pages[i] = await prepPage(null, (p.rot + 90) % 360, p.orig);
+  renderPages();
+});
+document.addEventListener("paste", e => {
+  if (S.tab !== "fotos" || e.target.closest?.("textarea,input")) return;
+  const fs = [...(e.clipboardData?.files || [])].filter(f => /^image\//.test(f.type));
+  if (fs.length) { e.preventDefault(); addFiles(fs); toast(fs.length + " imagen(es) pegada(s)."); }
+});
+$("#p-fotos").addEventListener("dragover", e => e.preventDefault());
+$("#p-fotos").addEventListener("drop", e => { e.preventDefault(); const fs = [...(e.dataTransfer?.files || [])]; if (fs.length) addFiles(fs); });
+$("#in-cam").addEventListener("change", e => { addFiles([...e.target.files]); e.target.value = ""; });
+$("#in-gal").addEventListener("change", e => { addFiles([...e.target.files]); e.target.value = ""; });
+
+/* =========================================================
+   Claude interpretation
+   ========================================================= */
+const SCHEMA_EXAMPLE = JSON.stringify({
+  title: "Estantería baja", notes: "Medidas estimadas por proporción",
+  parts: [{id: "A", name: "Lateral", kind: "board", l: 1000, w: 300, t: 18, qty: 2}, {id: "B", name: "Balda", kind: "board", l: 764, w: 300, t: 18, qty: 3}],
+  hardware: [{id: "101", name: "Tornillo", kind: "screw", qty: 12}, {id: "102", name: "Tarugo", kind: "dowel", qty: 6}],
+  steps: [
+    {n: 1, title: "Coloca el lateral izquierdo", tip: "Agujeros hacia dentro", people: 1, tools: [], confidence: .8, source: {page: 2, box: [.05, .08, .5, .45]},
+      actions: [{key: "A1", part: "A", pos: [-391, 500, 0], lengthAxis: "y", thickAxis: "x", from: "+y"}], hardware: []},
+    {n: 2, title: "Encaja la balda inferior", tip: "Usa los tarugos", people: 1, tools: ["martillo"], confidence: .7, source: {page: 2, box: [.5, .08, .95, .45]},
+      actions: [{key: "B1", part: "B", pos: [0, 60, 0], lengthAxis: "x", thickAxis: "y", from: "+x"}], hardware: [{id: "102", qty: 2, on: "B1"}]}
+  ]
+});
+const RULES = `SISTEMA DE COORDENADAS del mueble TERMINADO y de pie: milímetros; Y hacia arriba; suelo en y=0; X = ancho (derecha positiva); Z = profundidad (el frente mira a +Z); origen en el centro de la huella en el suelo.
+PIEZAS (parts): cada pieza es una caja. kind: "board" (tablero), "panel" (fondo fino de 3-5 mm) o "cylinder" (patas, barras). l = largo, w = ancho (diámetro en cilindros), t = grosor, en mm. id = la letra o número que usa el manual. Si no hay medidas impresas, estímalas por proporción con grosores típicos (tablero 16-18 mm, fondo 3 mm) y un tamaño total plausible.
+HERRAJES (hardware): id = código o letra del manual; kind uno de: screw (tornillo), camBolt (perno de excéntrica), cam (excéntrica), dowel (tarugo/espiga), nail (clavo), hinge (bisagra), bracket (escuadra/ángulo), other. qty = cantidad total del despiece.
+PASOS (steps): uno por cada número de paso del manual, en orden. actions: cada acción coloca UNA unidad de una pieza en su POSICIÓN FINAL del mueble terminado: key = id único de esa unidad ("A1","A2"…), pos = centro de la caja [x,y,z], lengthAxis = eje del mundo por el que corre el largo, thickAxis = eje por el que va el grosor (distinto de lengthAxis; el ancho queda en el tercer eje), from = de dónde llega la pieza ("+x","-x","+y","-y","+z","-z"). Las piezas deben tocarse cara con cara en las uniones (coordenadas exactas) y nunca superponerse. Si el manual arma el mueble acostado, igual da las posiciones del mueble terminado y de pie.
+hardware de cada paso: [{id, qty, on}] con on = key de la pieza que atraviesa el herraje (tornillos: la pieza por cuya cara exterior entra; tarugos: la pieza que recibe la nueva). El programa calcula los puntos exactos a partir de las caras en contacto, así que no des coordenadas de herrajes salvo que no haya contacto: entonces usa "at": [[x,y,z]] y "dir".
+source = {page: número de página en el total, box: [x0,y0,x1,y1] en fracciones 0-1 de la viñeta de ese paso en esa imagen}. people = personas dibujadas (1 o 2). tools = herramientas dibujadas, en español. title = qué se hace, imperativo y breve; tip = una frase con advertencias del dibujo (✗, lupa, cuidado). confidence = 0-1, qué tan seguro estás de las posiciones.
+Antes de responder comprueba: cada pieza se usa tantas veces como su qty; la suma de herrajes por paso iguala el despiece; ninguna pieza flota sin contacto (salvo la primera, apoyada en el suelo).`;
+
+function promptFirst(from, to, total){
+  return `Eres experto en ilustración técnica y en montaje de muebles. Te paso ${to - from + 1} imagen(es): las páginas ${from} a ${to} (de ${total}) de un manual de armado, en orden. Conviértelo en un plan 3D ejecutable.
+${RULES}
+Si una página no tiene pasos (portada, advertencias), ignórala, pero usa la lista de piezas y herrajes si aparece.
+Responde SOLO con un objeto JSON con exactamente esta forma (ejemplo):
+${SCHEMA_EXAMPLE}`;
+}
+function promptNext(plan, from, to, total){
+  const brief = {parts: plan.parts, hardware: plan.hardware, steps: plan.steps.map(s => ({n: s.n, title: s.title, actions: s.actions, hardware: s.hardware}))};
+  return `Eres experto en ilustración técnica y en montaje de muebles. Continúas un plan 3D ya empezado a partir de un manual de armado. Plan hasta ahora:
+${JSON.stringify(brief)}
+Ahora te paso las páginas ${from} a ${to} (de ${total}). Interpreta solo los pasos nuevos de estas páginas, continuando la numeración desde ${plan.steps.length + 1} y las posiciones del plan anterior.
+${RULES}
+Responde SOLO con un objeto JSON: {"parts":[solo piezas nuevas],"hardware":[solo herrajes nuevos],"steps":[pasos nuevos]} con la misma forma de campos que el plan.`;
+}
+async function interpret(){
+  if (!S.sample || !S.pages.length) return;
+  const lim = await S.sample.limits().catch(() => null);
+  if (!lim?.images) { toast("Esta vista no puede enviar imágenes a Claude."); return; }
+  const per = Math.max(1, lim.images.maxCount || 1), total = S.pages.length;
+  S.ctl = new AbortController();
+  $("#b-interpret").disabled = true; $("#b-stop").hidden = false; $("#ai-status").hidden = false;
+  const prog = $("#ai-progress");
+  let plan = null;
+  try {
+    for (let i = 0; i < total; i += per) {
+      const from = i + 1, to = Math.min(total, i + per);
+      const blobs = S.pages.slice(i, to).map(p => p.blob);
+      const label = total > per ? `Páginas ${from}-${to} de ${total}: ` : "";
+      prog.textContent = label + "Pensando… (puede tardar uno o dos minutos)";
+      const prompt = plan ? promptNext(plan, from, to, total) : promptFirst(from, to, total);
+      const res = await S.sample.json(prompt, {images: blobs, modelTier: $("#opt-max").checked ? "complex" : "default", signal: S.ctl.signal,
+        onText: ({text}) => { const st = (text.match(/"title"/g) || []).length; prog.textContent = `${label}Escribiendo el plan… ${st > 1 ? (st - 1) + " pasos" : ""} (${text.length.toLocaleString("es")} caracteres)`; }});
+      if (!plan) plan = res;
+      else {
+        plan.parts = (plan.parts || []).concat((res.parts || []).filter(p => !(plan.parts || []).some(q => String(q.id) === String(p.id))));
+        plan.hardware = (plan.hardware || []).concat((res.hardware || []).filter(p => !(plan.hardware || []).some(q => String(q.id) === String(p.id))));
+        plan.steps = (plan.steps || []).concat(res.steps || []);
+      }
+      plan = normalizePlan(plan);
+    }
+    if (!plan.steps.length) throw {code: "no_steps"};
+    loadPlan(plan, true);
+    toast("Plan listo. Revisa los pasos marcados antes de verlo.");
+  } catch (e) {
+    const msg = {
+      cancelled: "Interpretación detenida.",
+      not_granted: "No se dio permiso para usar Claude en esta página.",
+      rate_limited: "Llegaste al límite de uso por ahora. Prueba en un rato.",
+      invalid_json: "La respuesta no vino en el formato esperado. Toca Interpretar otra vez.",
+      image_rejected: "Una de las imágenes no se pudo usar. Prueba con otra foto.",
+      refused: "Claude no pudo procesar estas imágenes.",
+      no_steps: "No encontré pasos de armado en estas páginas. ¿Incluiste las páginas con los dibujos numerados?",
+      session_expired: "Tu sesión expiró. Vuelve a iniciar sesión en Claude.",
+      no_key: "Escribe tu clave de API de Claude arriba para interpretar.",
+      bad_key: "La clave de API no es válida. Revísala en console.anthropic.com.",
+      no_credit: "Tu cuenta de API no tiene saldo. Recárgala en console.anthropic.com.",
+      offline: "Sin conexión a internet. Conéctate y vuelve a intentarlo."
+    }[e?.code] || "Algo falló al interpretar. Toca Interpretar para intentarlo otra vez.";
+    toast(msg, 5000);
+    if (e?.code === "not_granted" || e?.code === "sampling_disabled") { S.sample = null; aiUnavailable(); }
+  } finally {
+    $("#b-stop").hidden = true; $("#ai-status").hidden = true; renderPages();
+  }
+}
+$("#b-interpret").addEventListener("click", interpret);
+$("#b-stop").addEventListener("click", () => S.ctl?.abort());
+function aiUnavailable(){
+  $("#ai-lead").textContent = "La interpretación con IA funciona cuando abres esta página dentro de Claude. Mientras tanto puedes probar el ejemplo o abrir un plan guardado.";
+  $("#b-interpret").disabled = true;
+}
+
+/* =========================================================
+   Plan lifecycle + review editor
+   ========================================================= */
+function loadPlan(plan, goReview){
+  S.plan = normalizePlan(plan);
+  rebuild();
+  $("#t-revisar").disabled = false; $("#t-ver").disabled = !S.plan.steps.length;
+  renderReview();
+  setStep(0);
+  if (S.layout.steps.length) { const w = stepTarget(0); Object.assign(P.cam, {target: w.target.slice(), dist: w.dist, yaw: w.yaw, pitch: w.pitch}); }
+  showTab(goReview ? "revisar" : "ver");
+}
+function rebuild(){
+  S.layout = buildLayout(S.plan);
+  S.warnings = validate(S.plan, S.layout);
+  store.set("armado.plan", S.plan);
+}
+function setPath(obj, path, val){ const ks = path.split("."); let o = obj; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks.at(-1)] = val; }
+
+function renderReview(){
+  const p = S.plan, W = S.warnings;
+  const partOpts = sel => p.parts.map(x => `<option value="${esc(x.id)}"${x.id === sel ? " selected" : ""}>${esc(x.id)} · ${esc(x.name)}</option>`).join("");
+  const hwOpts = sel => p.hardware.map(x => `<option value="${esc(x.id)}"${x.id === sel ? " selected" : ""}>${esc(x.id)} · ${esc(x.name || HW[x.kind].label)}</option>`).join("");
+  const axOpts = sel => AX.map(a => `<option${a === sel ? " selected" : ""}>${a}</option>`).join("");
+  const dirOpts = sel => `<option value=""${!sel ? " selected" : ""}>auto</option>` + DIRS.map(d => `<option value="${d}"${d === sel ? " selected" : ""}>${d} ${DIR_LABEL[d]}</option>`).join("");
+  const kindOpts = sel => Object.entries(PART_KINDS).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v}</option>`).join("");
+  const hkOpts = sel => Object.entries(HW).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v.label}</option>`).join("");
+  const stepWarn = {}; W.forEach(w => { if (w.step) (stepWarn[w.step] ||= []).push(w.msg); });
+
+  $("#review").innerHTML = `
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div style="flex:1;min-width:200px"><label class="f"><span>Mueble</span><input data-k="title" value="${esc(p.title)}"></label></div>
+      <button class="btn primary" data-go="ver">Ver armado</button>
+    </div>
+    ${p.notes ? `<p class="hint">${esc(p.notes)}</p>` : ""}
+    <ul class="warns">${W.length ? W.map(w => `<li>${w.step ? `<b>Paso ${w.step}</b>` : ""}<span>${esc(w.msg)}</span></li>`).join("") : `<li class="ok"><span>Las piezas y los herrajes cuadran con el despiece.</span></li>`}</ul>
+  </div>
+  <div class="card">
+    <h2>Piezas</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Id</th><th>Nombre</th><th>Tipo</th><th>Largo mm</th><th>Ancho mm</th><th>Grosor mm</th><th>Cant.</th></tr></thead>
+      <tbody>${p.parts.map((x, i) => `<tr>
+        <td class="id">${esc(x.id)}</td><td><input data-k="parts.${i}.name" value="${esc(x.name)}"></td>
+        <td><select data-k="parts.${i}.kind">${kindOpts(x.kind)}</select></td>
+        <td><input type="number" inputmode="decimal" data-k="parts.${i}.l" data-num value="${x.l}"></td>
+        <td><input type="number" inputmode="decimal" data-k="parts.${i}.w" data-num value="${x.w}"></td>
+        <td><input type="number" inputmode="decimal" data-k="parts.${i}.t" data-num value="${x.t}"></td>
+        <td><input type="number" inputmode="numeric" data-k="parts.${i}.qty" data-num value="${x.qty}"></td></tr>`).join("")}</tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Herrajes</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Id</th><th>Nombre</th><th>Tipo</th><th>Cant.</th></tr></thead>
+      <tbody>${p.hardware.map((x, i) => `<tr>
+        <td class="id">${esc(x.id)}</td><td><input data-k="hardware.${i}.name" value="${esc(x.name)}"></td>
+        <td><select data-k="hardware.${i}.kind">${hkOpts(x.kind)}</select></td>
+        <td><input type="number" inputmode="numeric" data-k="hardware.${i}.qty" data-num value="${x.qty}"></td></tr>`).join("")}</tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Pasos</h2>
+    <p class="hint">Posiciones en mm del mueble terminado: X ancho, Y alto, Z profundidad (frente = +Z).</p>
+    <div class="steps">${p.steps.map((s, si) => `
+      <div class="step" id="step-${si}">
+        <header><span class="sn">${s.n}</span><input data-k="steps.${si}.title" value="${esc(s.title)}" aria-label="Título del paso ${s.n}">
+          <span class="conf ${s.confidence < .6 ? "lo" : "hi"}" title="Confianza de la IA">${Math.round(s.confidence * 100)}%</span></header>
+        ${stepWarn[s.n] ? `<ul class="warns">${stepWarn[s.n].map(m => `<li><span>${esc(m)}</span></li>`).join("")}</ul>` : ""}
+        <div class="row" style="align-items:flex-start">
+          <label class="f" style="flex:1;min-width:200px"><span>Indicación</span><input data-k="steps.${si}.tip" value="${esc(s.tip)}"></label>
+          <label class="f" style="width:90px"><span>Personas</span><input type="number" data-num data-k="steps.${si}.people" value="${s.people}"></label>
+          ${s.source && S.pages[s.source.page - 1] ? `<img class="srcthumb" data-src="${si}" alt="Viñeta original del paso ${s.n}">` : ""}
+        </div>
+        ${s.actions.map((a, ai) => `
+          <div class="act">
+            <div class="ttl"><span>Coloca <span class="id">${esc(a.key)}</span></span><button class="btn small ghost" data-del-act="${si}.${ai}" aria-label="Quitar ${esc(a.key)}">Quitar</button></div>
+            <div class="grid">
+              <label class="f"><span>Pieza</span><select data-k="steps.${si}.actions.${ai}.part">${partOpts(a.part)}</select></label>
+              <label class="f"><span>X</span><input type="number" data-num data-k="steps.${si}.actions.${ai}.pos.0" value="${a.pos[0]}"></label>
+              <label class="f"><span>Y</span><input type="number" data-num data-k="steps.${si}.actions.${ai}.pos.1" value="${a.pos[1]}"></label>
+              <label class="f"><span>Z</span><input type="number" data-num data-k="steps.${si}.actions.${ai}.pos.2" value="${a.pos[2]}"></label>
+              <label class="f"><span>Largo en</span><select data-k="steps.${si}.actions.${ai}.lengthAxis">${axOpts(a.lengthAxis)}</select></label>
+              <label class="f"><span>Grosor en</span><select data-k="steps.${si}.actions.${ai}.thickAxis">${axOpts(a.thickAxis)}</select></label>
+              <label class="f"><span>Llega desde</span><select data-k="steps.${si}.actions.${ai}.from">${dirOpts(a.from)}</select></label>
+            </div>
+          </div>`).join("")}
+        ${s.hardware.map((h, hi) => `
+          <div class="act">
+            <div class="ttl"><span>Herraje</span><button class="btn small ghost" data-del-hw="${si}.${hi}">Quitar</button></div>
+            <div class="grid">
+              <label class="f"><span>Herraje</span><select data-k="steps.${si}.hardware.${hi}.id">${hwOpts(h.id)}</select></label>
+              <label class="f"><span>Cantidad</span><input type="number" data-num data-k="steps.${si}.hardware.${hi}.qty" value="${h.qty}"></label>
+              <label class="f"><span>Atraviesa</span><select data-k="steps.${si}.hardware.${hi}.on"><option value="">piezas del paso</option>${p.steps.flatMap(q => q.actions).map(a => `<option${a.key === h.on ? " selected" : ""}>${esc(a.key)}</option>`).join("")}</select></label>
+            </div>
+          </div>`).join("")}
+        <div class="row">
+          <button class="btn small" data-add-act="${si}" ${p.parts.length ? "" : "disabled"}>+ Pieza</button>
+          <button class="btn small" data-add-hw="${si}" ${p.hardware.length ? "" : "disabled"}>+ Herraje</button>
+          <button class="btn small" data-view="${si}">Ver este paso</button>
+          <button class="btn small ghost" data-del-step="${si}">Borrar paso</button>
+        </div>
+      </div>`).join("")}
+    </div>
+    <div class="row"><button class="btn" id="b-addstep">+ Añadir paso</button></div>
+  </div>
+  <div class="card">
+    <h2>Guardar el plan</h2>
+    <p class="hint">El plan pesa unos KB y se puede volver a abrir aquí sin gastar otra interpretación.</p>
+    <div class="row">
+      <button class="btn grow" id="b-savejson">Guardar plan (.json)</button>
+      <button class="btn grow" id="b-copyjson">Copiar plan</button>
+    </div>
+  </div>`;
+  $$("#review img[data-src]").forEach(im => { const s = p.steps[+im.dataset.src]; cropSource(S.pages[s.source.page - 1], s.source.box).then(u => u && (im.src = u)); });
+}
+const review = $("#review");
+review.addEventListener("change", e => {
+  const el = e.target.closest("[data-k]"); if (!el) return;
+  let v = el.value; if (el.hasAttribute("data-num")) v = num(v, 0);
+  const k = el.dataset.k;
+  if (/\.on$/.test(k) && !v) { const ks = k.split("."); delete S.plan.steps[+ks[1]].hardware[+ks[3]].on; }
+  else setPath(S.plan, k, v);
+  const keep = review.parentElement.scrollTop;
+  S.plan = normalizePlan(S.plan); rebuild(); renderReview(); review.parentElement.scrollTop = keep;
+});
+review.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return; const p = S.plan;
+  const keep = review.parentElement.scrollTop; let changed = true;
+  if (b.dataset.go) { showTab("ver"); return; }
+  if (b.dataset.view !== undefined) { setStep(+b.dataset.view); P.cam = Object.assign(P.cam, {}); showTab("ver"); return; }
+  if (b.dataset.delAct) { const [s, a] = b.dataset.delAct.split(".").map(Number); p.steps[s].actions.splice(a, 1); }
+  else if (b.dataset.delHw) { const [s, h] = b.dataset.delHw.split(".").map(Number); p.steps[s].hardware.splice(h, 1); }
+  else if (b.dataset.addAct) { const s = p.steps[+b.dataset.addAct]; const part = p.parts[0]; s.actions.push({key: "", part: part.id, pos: [0, Math.max(9, part.t / 2), 0], lengthAxis: "x", thickAxis: "y", from: ""}); }
+  else if (b.dataset.addHw) { p.steps[+b.dataset.addHw].hardware.push({id: p.hardware[0].id, qty: 1}); }
+  else if (b.dataset.delStep) { p.steps.splice(+b.dataset.delStep, 1); }
+  else if (b.id === "b-addstep") { p.steps.push({n: p.steps.length + 1, title: "Nuevo paso", tip: "", people: 1, tools: [], confidence: 1, actions: [], hardware: []}); }
+  else if (b.id === "b-savejson") { savePlanFile(); changed = false; }
+  else if (b.id === "b-copyjson") { navigator.clipboard?.writeText(JSON.stringify(stripPlan(p), null, 1)).then(() => toast("Plan copiado.")).catch(() => toast("No se pudo copiar.")); changed = false; }
+  else changed = false;
+  if (changed) { S.plan = normalizePlan(p); rebuild(); renderReview(); review.parentElement.scrollTop = keep; $("#t-ver").disabled = !S.plan.steps.length; }
+});
+function stripPlan(p){ return JSON.parse(JSON.stringify(p)); }
+async function savePlanFile(){
+  const name = (S.plan.title || "plan").toLowerCase().normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "") || "plan";
+  if (!S.downloads) { toast("Guardar archivos no está disponible aquí. Usa Copiar plan."); return; }
+  try { await S.downloads.save({filename: name + ".json", data: JSON.stringify(stripPlan(S.plan), null, 1)}); }
+  catch (e) { if (e?.code !== "declined") toast("No se pudo guardar el archivo."); }
+}
+
+/* =========================================================
+   Tabs + wiring
+   ========================================================= */
+function showTab(name){
+  S.tab = name;
+  $$("nav.tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  $$(".panel").forEach(p => p.classList.toggle("on", p.id === "p-" + name));
+  if (name === "ver" && S.layout) { updateOverlay(); }
+  if (name !== "ver") setPlaying(false);
+}
+$$("nav.tabs button").forEach(b => b.addEventListener("click", () => !b.disabled && showTab(b.dataset.tab)));
+$("#b-demo").addEventListener("click", () => loadPlan(DEMO, false));
+$("#in-plan").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { loadPlan(JSON.parse(await f.text()), true); } catch { toast("Ese archivo no es un plan válido."); }
+});
+$("#b-pasteplan").addEventListener("click", () => {
+  const t = $("#paste-plan").value.trim(); if (!t) { toast("Pega primero el texto del plan."); return; }
+  try { const a = t.indexOf("{"), b = t.lastIndexOf("}"); loadPlan(JSON.parse(t.slice(a, b + 1)), true); } catch { toast("Ese texto no es un plan válido."); }
+});
+function watchChatPlans(db){
+  const card = $("#chat-card"), list = $("#chat-plans"); card.hidden = false;
+  list.innerHTML = `<p class="hint">Buscando planes…</p>`;
+  const timer = setTimeout(() => { if (!S.chatPlans) list.innerHTML = `<p class="hint">No se pudieron cargar los planes todavía.</p>`; }, 10000);
+  try {
+    db.collection("plans").onSnapshot(snap => {
+      if (!snap.metadata.fromCache) clearTimeout(timer);
+      S.chatPlans = snap.docs.filter(d => d.exists).map(d => ({id: d.id, ...d.data()}))
+        .sort((a, b) => String(b.created || "").localeCompare(String(a.created || "")));
+      if (!S.chatPlans.length) { list.innerHTML = `<p class="hint">Todavía no hay planes. Envía las fotos del manual en el chat y pide a Claude que te deje el plan aquí.</p>`; return; }
+      list.innerHTML = S.chatPlans.map((p, i) => `<div class="it"><div><b>${esc(p.title || "Plan")}</b><span class="hint">${(p.steps || []).length} pasos${p.created ? " · " + esc(String(p.created).slice(0, 10)) : ""}</span></div><button class="btn small primary" data-chatplan="${i}">Abrir</button></div>`).join("");
+    }, () => { clearTimeout(timer); list.innerHTML = `<p class="hint">Los planes del chat no están disponibles en esta vista.</p>`; });
+  } catch { card.hidden = true; }
+}
+$("#chat-plans").addEventListener("click", e => { const b = e.target.closest("[data-chatplan]"); if (b) loadPlan(S.chatPlans[+b.dataset.chatplan], true); });
+$("#b-resume").addEventListener("click", () => { const p = store.get("armado.plan"); if (p) loadPlan(p, false); });
+$("#b-play").addEventListener("click", () => setPlaying(!P.playing));
+$("#b-prev").addEventListener("click", () => { setStep(P.t > 1.2 ? P.step : P.step - 1); });
+$("#b-next").addEventListener("click", () => setStep(P.step + 1));
+$("#scrub").addEventListener("input", e => { setStep(+e.target.value); });
+$("#b-center").addEventListener("click", () => { P.auto = true; P.want = stepTarget(P.step); });
+$$("[data-speed]").forEach(b => b.addEventListener("click", () => { P.speed = +b.dataset.speed; $$("[data-speed]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); }));
+$$("[data-style]").forEach(b => b.addEventListener("click", () => { P.style = b.dataset.style; $$("[data-style]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); }));
+$("#b-voice").addEventListener("click", e => { P.voice = !P.voice; e.currentTarget.textContent = "Voz: " + (P.voice ? "sí" : "no"); e.currentTarget.setAttribute("aria-pressed", String(P.voice)); if (P.voice) speakStep(); else try { speechSynthesis.cancel(); } catch {} });
+$("#b-rec").addEventListener("click", () => { if (P.rec) { setPlaying(false); finishRec(); } else startRec(); });
+$("#b-closevid").addEventListener("click", () => $("#dlg-video").close());
+$("#b-savevid").addEventListener("click", async () => {
+  if (!lastVideo || !S.downloads) return;
+  try { await S.downloads.save({filename: `armado-${Date.now()}.${lastVideo.ext}`, data: lastVideo.blob}); toast("Video guardado."); }
+  catch (e) { if (e?.code !== "declined") toast("No se pudo guardar el video. Mantén presionado el video para guardarlo."); }
+});
+document.addEventListener("keydown", e => {
+  if (S.tab !== "ver" || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) return;
+  if (e.key === " ") { e.preventDefault(); setPlaying(!P.playing); }
+  if (e.key === "ArrowRight") setStep(P.step + 1);
+  if (e.key === "ArrowLeft") setStep(P.step - 1);
+});
+
+/* =========================================================
+   Android app mode (APK): native bridge replaces claude.use()
+   ========================================================= */
+const NATIVE = {cb: new Map(), n: 0};
+window.__nativeCb = (id, status, body) => { const f = NATIVE.cb.get(id); if (f) { NATIVE.cb.delete(id); f(status, body); } };
+window.__nativeSaved = (id, ok, msg) => window.__nativeCb(id, ok ? 200 : 500, msg || "");
+function nativePost(url, headers, body){
+  return new Promise(res => { const id = "c" + (++NATIVE.n); NATIVE.cb.set(id, (status, text) => res({status, text}));
+    Android.post(url, JSON.stringify(headers), body, id); });
+}
+function blobToB64(b){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(b); }); }
+function parseJsonLoose(t){
+  try { return JSON.parse(t); } catch {}
+  const f = t.match(/```(?:json)?\s*([\s\S]*?)```/); if (f) { try { return JSON.parse(f[1]); } catch {} }
+  const a = t.search(/[\[{]/), b = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+  throw {code: "invalid_json", text: t};
+}
+function makeNativeSample(){
+  const fn = async () => { throw {code: "invalid_request"}; };
+  fn.limits = async () => ({maxPromptBytes: 262144, images: {maxCount: 8, maxInputBytes: 5e6, mediaTypes: ["image/jpeg", "image/png", "image/webp"]}});
+  fn.json = async (prompt, o = {}) => {
+    const key = (store.get("armado.apikey") || "").trim();
+    if (!key) throw {code: "no_key"};
+    const imgs = o.images ? [...(o.images.length !== undefined ? o.images : [o.images])] : [];
+    const content = [];
+    for (const b of imgs) content.push({type: "image", source: {type: "base64", media_type: "image/jpeg", data: await blobToB64(b)}});
+    content.push({type: "text", text: prompt + "\n\nResponde únicamente con el JSON, sin texto antes ni después."});
+    const model = o.modelTier === "complex" ? "claude-opus-5-5" : "claude-sonnet-5-5";
+    if (o.signal?.aborted) throw {code: "cancelled"};
+    const r = await nativePost("https://api.anthropic.com/v1/messages",
+      {"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+      JSON.stringify({model, max_tokens: 32000, messages: [{role: "user", content}]}));
+    if (o.signal?.aborted) throw {code: "cancelled"};
+    let j = null; try { j = JSON.parse(r.text); } catch {}
+    if (r.status === 401 || r.status === 403) throw {code: "bad_key"};
+    if (r.status === 429) throw {code: "rate_limited"};
+    if (r.status === 402 || /credit|billing/i.test(j?.error?.message || "")) throw {code: "no_credit"};
+    if (r.status !== 200 || !j) throw {code: r.status === 0 ? "offline" : "upstream_error", message: j?.error?.message || r.text};
+    const text = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("");
+    o.onText?.({text, delta: text});
+    return parseJsonLoose(text);
+  };
+  return fn;
+}
+function bootAndroid(){
+  S.sample = makeNativeSample();
+  S.downloads = {save: async ({filename, data}) => {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const b64 = await blobToB64(blob);
+    return new Promise((res, rej) => { const id = "s" + (++NATIVE.n);
+      NATIVE.cb.set(id, (st, msg) => st === 200 ? (toast(msg || "Guardado en Descargas."), res({status: "saved"})) : rej({code: "unavailable", message: msg}));
+      Android.saveFile(filename, b64, id); });
+  }};
+  $("#key-box").hidden = false; $("#key-box").style.display = "flex";
+  $("#api-key").value = store.get("armado.apikey") || "";
+  $("#api-key").addEventListener("change", e => { store.set("armado.apikey", e.target.value.trim()); toast("Clave guardada en este teléfono."); });
+  $("#ai-lead").textContent = "Claude lee las páginas, identifica piezas, herrajes y pasos, y arma un plan 3D que luego puedes revisar. Necesita tu clave de API.";
+  $("#chat-hint").textContent = "También puedes enviar las fotos en el chat de Claude, pedir el plan en .json y abrirlo aquí con «Abrir un plan guardado».";
+  renderPages();
+}
+window.__back = () => {
+  if ($("#dlg-video").open) { $("#dlg-video").close(); return true; }
+  if (S.tab === "ver") { showTab("revisar"); return true; }
+  if (S.tab === "revisar") { showTab("fotos"); return true; }
+  return false;
+};
+
+/* boot */
+(function boot(){
+  renderPages();
+  try { if (!R.init($("#gl"))) $("#nogl").style.display = "flex"; } catch (err) { console.error(err); $("#nogl").style.display = "flex"; }
+  initGestures();
+  if (store.get("armado.plan")) $("#b-resume").hidden = false;
+  requestAnimationFrame(loop);
+  if (window.Android) bootAndroid();
+  else if (window.claude?.use) {
+    claude.use("sample").then(s => { S.sample = s; if (!s) aiUnavailable(); renderPages(); }).catch(() => aiUnavailable());
+    claude.use("downloads").then(d => { S.downloads = d; }).catch(() => {});
+    claude.use("db").then(db => { if (db) watchChatPlans(db); }).catch(() => {});
+  } else aiUnavailable();
+})();
+</script>
+</body>
+</html>
