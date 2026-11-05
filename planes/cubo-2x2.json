@@ -1,0 +1,50 @@
+{
+ "title": "Cubo 2×2",
+ "notes": "Interpretado del manual CUBE 2x2. Medidas estimadas por proporción (unos 76 × 76 × 33 cm, tablero de 16 mm): el manual no las imprime. Herramientas: destornillador de cruz, destornillador plano, martillo y la llave Allen H.",
+ "parts": [
+  {"id":"1","name":"Tapa superior","kind":"board","l":760,"w":330,"t":16,"qty":1},
+  {"id":"2","name":"Base inferior","kind":"board","l":728,"w":330,"t":16,"qty":1},
+  {"id":"3","name":"Lateral","kind":"board","l":744,"w":330,"t":16,"qty":2},
+  {"id":"4","name":"Balda fija","kind":"board","l":728,"w":330,"t":16,"qty":1},
+  {"id":"5","name":"Divisor superior","kind":"board","l":336,"w":330,"t":16,"qty":1},
+  {"id":"6","name":"Divisor inferior","kind":"board","l":336,"w":330,"t":16,"qty":1}
+ ],
+ "hardware": [
+  {"id":"A","name":"Excéntrica","kind":"cam","qty":14},
+  {"id":"B","name":"Perno de excéntrica","kind":"camBolt","qty":14},
+  {"id":"C","name":"Tarugo 8×32","kind":"dowel","qty":12},
+  {"id":"D","name":"Tarugo 8×50","kind":"dowel","qty":8},
+  {"id":"E","name":"Tapa de excéntrica","kind":"other","qty":10},
+  {"id":"F","name":"Tapón de agujero","kind":"other","qty":4},
+  {"id":"G","name":"Tornillo hexagonal 8×84","kind":"screw","qty":6}
+ ],
+ "steps": [
+  {"n":1,"title":"Pon de pie el lateral derecho","tip":"Antes de empezar, atornilla a mano los pernos B en la tapa, la balda y los laterales (paso 1 del manual). Los agujeros del lateral miran hacia dentro.","people":1,"tools":["destornillador"],"confidence":0.8,
+   "source":{"page":1,"box":[0.015,0.71,0.36,0.985]},
+   "actions":[{"key":"3a","part":"3","pos":[372,372,0],"lengthAxis":"y","thickAxis":"x","from":"+y"}],"hardware":[]},
+  {"n":2,"title":"Une la balda fija al lateral","tip":"Golpea los tarugos C en la balda, encájala en el lateral y gira cada excéntrica A hasta que apriete. Tápalas con E.","people":1,"tools":["martillo","destornillador"],"confidence":0.75,
+   "source":{"page":1,"box":[0.36,0.02,0.565,0.5]},
+   "actions":[{"key":"4a","part":"4","pos":[0,400,0],"lengthAxis":"x","thickAxis":"y","from":"-x"}],
+   "hardware":[{"id":"C","qty":2,"on":"4a"},{"id":"B","qty":2,"on":"4a"},{"id":"A","qty":2,"on":"3a"},{"id":"E","qty":2,"on":"3a"}]},
+  {"n":3,"title":"Coloca los divisores arriba y abajo de la balda","tip":"El divisor superior 5 va encima y el inferior 6 debajo, centrados. Fíjalos con tarugos C y excéntricas A.","people":1,"tools":["martillo","destornillador"],"confidence":0.7,
+   "source":{"page":1,"box":[0.565,0.02,0.765,0.5]},
+   "actions":[{"key":"5a","part":"5","pos":[0,576,0],"lengthAxis":"y","thickAxis":"x","from":"+y"},
+              {"key":"6a","part":"6","pos":[0,224,0],"lengthAxis":"y","thickAxis":"x","from":"-y"}],
+   "hardware":[{"id":"C","qty":4},{"id":"B","qty":2},{"id":"A","qty":1,"on":"5a"},{"id":"A","qty":1,"on":"6a"}]},
+  {"n":4,"title":"Cierra con el lateral izquierdo","tip":"Encaja los tarugos de la balda en el segundo lateral y aprieta sus excéntricas A. Tápalas con E.","people":2,"tools":["destornillador"],"confidence":0.75,
+   "source":{"page":1,"box":[0.765,0.02,0.985,0.5]},
+   "actions":[{"key":"3b","part":"3","pos":[-372,372,0],"lengthAxis":"y","thickAxis":"x","from":"-x"}],
+   "hardware":[{"id":"C","qty":2,"on":"3b"},{"id":"B","qty":2,"on":"3b"},{"id":"A","qty":2,"on":"3b"},{"id":"E","qty":2,"on":"3b"}]},
+  {"n":5,"title":"Pon la tapa superior","tip":"Encaja la tapa 1 sobre los laterales y el divisor con tarugos C. Aprieta las excéntricas A y cubre con los tapones F y las tapas E.","people":2,"tools":["martillo","destornillador"],"confidence":0.65,
+   "source":{"page":1,"box":[0.36,0.5,0.66,0.985]},
+   "actions":[{"key":"1a","part":"1","pos":[0,752,0],"lengthAxis":"x","thickAxis":"y","from":"+y"}],
+   "hardware":[{"id":"C","qty":4},{"id":"B","qty":4},{"id":"A","qty":4,"on":"1a"},{"id":"F","qty":4,"on":"1a"},{"id":"E","qty":4,"on":"1a"}]},
+  {"n":6,"title":"Coloca la base y atorníllala","tip":"Encaja la base 2 con los tarugos largos D y atornilla los tornillos G con la llave Allen H. Aprieta las últimas excéntricas.","people":2,"tools":["martillo","llave Allen"],"confidence":0.65,
+   "source":{"page":1,"box":[0.36,0.5,0.66,0.985]},
+   "actions":[{"key":"2a","part":"2","pos":[0,48,0],"lengthAxis":"x","thickAxis":"y","from":"-y"}],
+   "hardware":[{"id":"D","qty":8},{"id":"B","qty":4},{"id":"G","qty":6,"on":"2a"},{"id":"A","qty":4,"on":"2a"},{"id":"E","qty":2,"on":"2a"}]},
+  {"n":7,"title":"¡Listo! Ponlo de pie y revisa","tip":"Comprueba que todas las excéntricas estén apretadas y que el mueble no se tambalee.","people":1,"tools":[],"confidence":0.9,
+   "source":{"page":1,"box":[0.66,0.5,0.985,0.985]},
+   "actions":[],"hardware":[]}
+ ]
+}

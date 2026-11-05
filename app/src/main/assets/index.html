@@ -127,6 +127,9 @@ td input{min-width:120px} td input[type=number]{min-width:76px} td select{min-wi
 .stepbadge{font:800 40px/1 var(--f-display);color:var(--ink);background:var(--sheet);border:2.5px solid var(--ink);border-radius:12px;min-width:58px;height:58px;display:grid;place-items:center;flex:none}
 .stepinfo{background:color-mix(in srgb,var(--sheet) 90%,transparent);border:1px solid var(--rule);border-radius:12px;padding:8px 12px;max-width:min(520px,100%);display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(6px)}
 .stepinfo h3{font-size:16px;font-weight:700}
+.stepinfo{pointer-events:auto;cursor:pointer}
+.stepinfo.min p,.stepinfo.min .chips{display:none}
+.stepinfo .more{font:600 11px var(--f-mono);color:var(--muted)}
 .stepinfo p{margin:0;font-size:14px;color:var(--muted)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font:600 12px/1 var(--f-mono);border:1.5px solid var(--ink);border-radius:20px;padding:5px 9px;background:var(--sheet)}
@@ -239,6 +242,7 @@ code{font-family:var(--f-mono);font-size:13px}
             <h3 id="ov-title"></h3>
             <p id="ov-tip"></p>
             <div class="chips" id="ov-chips"></div>
+            <span class="more" id="ov-more">Toca para ocultar</span>
           </div>
         </div>
         <div class="src" id="ov-src" hidden><img id="ov-src-img" alt="Paso original del manual"><span>Manual</span></div>
@@ -850,12 +854,13 @@ function updateOverlay(){
   $("#ov-title").textContent = st.title;
   $("#ov-tip").textContent = st.tip;
   const chips = [];
-  st.hardware.forEach(h => { const m = S.plan.hardware.find(x => x.id === h.id);
-    chips.push(`<span class="chip hw">${h.qty}× ${esc(m?.name || HW[m?.kind]?.label || "herraje")} ${esc(h.id)}</span>`); });
+  const hq = {}; st.hardware.forEach(h => hq[h.id] = (hq[h.id] || 0) + h.qty);
+  Object.entries(hq).forEach(([id, q]) => { const m = S.plan.hardware.find(x => x.id === id);
+    chips.push(`<span class="chip hw">${q}× ${esc(m?.name || HW[m?.kind]?.label || "herraje")} ${esc(id)}</span>`); });
   const pc = {}; st.actions.forEach(a => pc[a.part] = (pc[a.part] || 0) + 1);
   Object.entries(pc).forEach(([id, q]) => { const p = S.plan.parts.find(x => x.id === id); chips.push(`<span class="chip">${q}× ${esc(p?.name || "pieza")} ${esc(id)}</span>`); });
   if (st.people > 1) chips.push(`<span class="chip">${st.people} personas</span>`);
-  st.tools.forEach(t => chips.push(`<span class="chip">${esc(t)}</span>`));
+  if (chips.length < 4) st.tools.forEach(t => chips.push(`<span class="chip">${esc(t)}</span>`));
   $("#ov-chips").innerHTML = chips.join("");
   $("#scrub").max = L.steps.length - 1; $("#scrub").value = P.step;
   $("#stepcount").textContent = `${P.step + 1}/${L.steps.length}`;
@@ -1335,6 +1340,7 @@ function watchChatPlans(db){
 }
 $("#chat-plans").addEventListener("click", e => { const b = e.target.closest("[data-chatplan]"); if (b) loadPlan(S.chatPlans[+b.dataset.chatplan], true); });
 $("#b-resume").addEventListener("click", () => { const p = store.get("armado.plan"); if (p) loadPlan(p, false); });
+$(".stepinfo").addEventListener("click", () => { const el = $(".stepinfo"); el.classList.toggle("min"); $("#ov-more").textContent = el.classList.contains("min") ? "Toca para ver detalles" : "Toca para ocultar"; });
 $("#b-play").addEventListener("click", () => setPlaying(!P.playing));
 $("#b-prev").addEventListener("click", () => { setStep(P.t > 1.2 ? P.step : P.step - 1); });
 $("#b-next").addEventListener("click", () => setStep(P.step + 1));
