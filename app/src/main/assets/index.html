@@ -1402,7 +1402,28 @@ function makeNativeSample(){
   };
   return fn;
 }
+const PLANS_BASE = "https://raw.githubusercontent.com/FREED000ME/visor-modelos-3d/armado-apk/planes/";
+function nativeGet(url){ return new Promise(res => { const id = "g" + (++NATIVE.n); NATIVE.cb.set(id, (status, text) => res({status, text})); Android.get(url, id); }); }
+async function loadRemotePlans(){
+  const list = $("#chat-plans"); list.innerHTML = `<p class="hint">Buscando planes…</p>`;
+  const r = await nativeGet(PLANS_BASE + "index.json?t=" + Date.now());
+  let idx = null; try { idx = JSON.parse(r.text); } catch {}
+  if (r.status !== 200 || !Array.isArray(idx)) { list.innerHTML = `<p class="hint">No pude conectarme para buscar planes. Revisa tu internet y toca Actualizar.</p>`; return; }
+  S.chatPlans = idx.slice().sort((a, b) => String(b.created || "").localeCompare(String(a.created || "")));
+  list.innerHTML = S.chatPlans.length ? S.chatPlans.map((p, i) => `<div class="it"><div><b>${esc(p.title || "Plan")}</b><span class="hint">${num(p.steps, 0)} pasos${p.created ? " · " + esc(String(p.created).slice(0, 10)) : ""}</span></div><button class="btn small primary" data-remoteplan="${i}">Abrir</button></div>`).join("")
+    : `<p class="hint">Todavía no hay planes. Envía las fotos del manual en el chat de Claude y pídele que te lo deje en la app.</p>`;
+}
 function bootAndroid(){
+  $("#chat-card").hidden = false;
+  $("#chat-lead").innerHTML = `Los manuales que Claude interpreta en el chat aparecen aquí (pueden tardar unos minutos). <button class="btn small" id="b-refresh-plans">Actualizar</button>`;
+  $("#chat-card").addEventListener("click", async e => {
+    if (e.target.closest("#b-refresh-plans")) { loadRemotePlans(); return; }
+    const b = e.target.closest("[data-remoteplan]"); if (!b) return;
+    const meta = S.chatPlans[+b.dataset.remoteplan]; b.disabled = true; b.textContent = "Abriendo…";
+    const r = await nativeGet(PLANS_BASE + encodeURIComponent(meta.file) + "?t=" + Date.now());
+    try { if (r.status !== 200) throw 0; loadPlan(JSON.parse(r.text), true); } catch { toast("No pude abrir ese plan. Toca Actualizar e inténtalo otra vez."); b.disabled = false; b.textContent = "Abrir"; }
+  });
+  loadRemotePlans();
   S.sample = makeNativeSample();
   S.downloads = {save: async ({filename, data}) => {
     const blob = data instanceof Blob ? data : new Blob([data]);
@@ -1415,7 +1436,7 @@ function bootAndroid(){
   $("#api-key").value = store.get("armado.apikey") || "";
   $("#api-key").addEventListener("change", e => { store.set("armado.apikey", e.target.value.trim()); toast("Clave guardada en este teléfono."); });
   $("#ai-lead").textContent = "Claude lee las páginas, identifica piezas, herrajes y pasos, y arma un plan 3D que luego puedes revisar. Necesita tu clave de API.";
-  $("#chat-hint").textContent = "También puedes enviar las fotos en el chat de Claude, pedir el plan en .json y abrirlo aquí con «Abrir un plan guardado».";
+  $("#chat-hint").textContent = "¿Sin clave de API? Envía las fotos del manual en el chat de Claude y pídele que te deje el plan en la app: aparecerá en «Planes desde el chat».";
   renderPages();
 }
 window.__back = () => {

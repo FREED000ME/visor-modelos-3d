@@ -199,6 +199,30 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void get(String url, String id) {
+            pool.execute(() -> {
+                int status = 0;
+                String text;
+                HttpURLConnection c = null;
+                try {
+                    c = (HttpURLConnection) new URL(url).openConnection();
+                    c.setConnectTimeout(20000);
+                    c.setReadTimeout(60000);
+                    c.setUseCaches(false);
+                    c.setRequestProperty("Cache-Control", "no-cache");
+                    status = c.getResponseCode();
+                    InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
+                    text = in == null ? "" : readAll(in);
+                } catch (Exception e) {
+                    text = String.valueOf(e.getMessage());
+                } finally {
+                    if (c != null) c.disconnect();
+                }
+                js("window.__nativeCb(" + JSONObject.quote(id) + "," + status + "," + JSONObject.quote(text) + ")");
+            });
+        }
+
+        @JavascriptInterface
         public void saveFile(String name, String b64, String id) {
             pool.execute(() -> {
                 try {
